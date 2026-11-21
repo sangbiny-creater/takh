@@ -8,6 +8,10 @@ const $shield = document.getElementById('shield');
 
 // ---------- 아이콘 ----------
 const ICONS = {
+  navHome: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  navCrown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>',
+  navBars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3.5" y="12" width="4.5" height="8.5" rx="1.5"/><rect x="9.75" y="7" width="4.5" height="13.5" rx="1.5"/><rect x="16" y="3.5" width="4.5" height="17" rx="1.5"/></svg>',
+  navStar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1L3.2 9.4l6.1-.8z"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
   trophyColor: '<svg viewBox="0 0 48 48"><path d="M14 6h20v12a10 10 0 0 1-20 0z" fill="#FFC23D"/><path d="M14 9H7v4a7 7 0 0 0 7 7M34 9h7v4a7 7 0 0 1-7 7" fill="none" stroke="#F4A51C" stroke-width="3"/><path d="M20 28h8v6h-8z" fill="#F4A51C"/><rect x="14" y="34" width="20" height="6" rx="2" fill="#E8901A"/><path d="M24 11l1.8 3.6 4 .6-2.9 2.8.7 4L24 20.1l-3.6 1.9.7-4-2.9-2.8 4-.6z" fill="#fff"/></svg>',
@@ -120,6 +124,36 @@ async function share(score, correct) {
   });
 }
 
+// ---------- 디자인 공통 (GPT 시안 기준: 초록 머리띠 · 하늘 장면 · 크림 카드) ----------
+const UI = {
+  spark: '<svg class="spark" viewBox="0 0 40 40"><path d="M20 4v9M33 9l-6 6M36 22h-9" stroke="#FFC928" stroke-width="5" stroke-linecap="round"/></svg>',
+  sparkL: '<svg class="spark l" viewBox="0 0 40 40"><path d="M20 4v9M7 9l6 6M4 22h9" stroke="#FFC928" stroke-width="5" stroke-linecap="round"/></svg>',
+  laurel: (flip) => `<svg class="laurel ${flip ? 'r' : ''}" viewBox="0 0 40 90"><path d="M30 86C12 70 8 44 16 8" fill="none" stroke="#E5A81B" stroke-width="3.5" stroke-linecap="round"/>${[14, 26, 38, 50, 62, 74].map((y, i) => `<ellipse cx="${i % 2 ? 24 : 10}" cy="${y}" rx="7" ry="4.2" transform="rotate(${i % 2 ? -35 : 35} ${i % 2 ? 24 : 10} ${y})" fill="#F7C531" stroke="#E0A11A" stroke-width="1.5"/>`).join('')}</svg>`,
+  kakao: '<svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.4.3.7.6.5l4.3-2.8c.5.1 1 .1 1.4.1 5.5 0 10-3.6 10-8.1S17.5 3 12 3z" fill="#3A1D1D"/></svg>',
+  google: '<svg viewBox="0 0 24 24"><path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4"/><path d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" fill="#34A853"/><path d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14z" fill="#FBBC05"/><path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z" fill="#EA4335"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6l8.5 7 8.5-7"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="#1F3A2B" stroke-width="2.4" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>',
+  video: '<svg viewBox="0 0 28 24"><rect x="1.5" y="3" width="25" height="18" rx="3" fill="#2E9A5E" stroke="#1E6B47" stroke-width="2"/><path d="M11.5 8v8l6-4z" fill="#fff"/><path d="M5 3v18M23 3v18" stroke="#1E6B47" stroke-width="2"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="#C94A3A" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5" fill="#FFF3E6"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4" stroke-linecap="round"/></svg>',
+  clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="#1F2A24" stroke-width="2" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2.5" fill="#F3FAF2"/><rect x="9" y="2" width="6" height="4" rx="1.5" fill="#fff"/><path d="M8.5 11h7M8.5 15h7" stroke-linecap="round"/></svg>',
+  stopwatch: '<svg viewBox="0 0 48 48"><rect x="20" y="3" width="8" height="5" rx="1.5" fill="#E8A417" stroke="#4A3426" stroke-width="2"/><circle cx="24" cy="27" r="17" fill="#FFD54A" stroke="#4A3426" stroke-width="3"/><circle cx="24" cy="27" r="12" fill="#FFF8E6"/><path d="M24 19v8l6 3" stroke="#D84A3A" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
+  xcircle: '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#E5484D" stroke="#9E2A2E" stroke-width="2.5"/><path d="M16.5 16.5l15 15M31.5 16.5l-15 15" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="#2E7D5B" stroke-width="2" stroke-linejoin="round"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg>',
+  // 설정 줄 아이콘 (노랑 채움 + 진한 선)
+  sUser: '<svg viewBox="0 0 28 28"><circle cx="14" cy="9" r="5.5" fill="#FFD54A" stroke="#2A2416" stroke-width="2.2"/><path d="M4 25c1-6 5-9 10-9s9 3 10 9z" fill="#FFD54A" stroke="#2A2416" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  sPencil: '<svg viewBox="0 0 28 28"><path d="M5 23l1.5-5.5L19 5l4 4L10.5 21.5z" fill="#FFD54A" stroke="#2A2416" stroke-width="2.2" stroke-linejoin="round"/><path d="M16 8l4 4" stroke="#2A2416" stroke-width="2.2"/></svg>',
+  sTrophy: '<svg viewBox="0 0 28 28"><path d="M8 4h12v6a6 6 0 0 1-12 0z" fill="#FFD54A" stroke="#2A2416" stroke-width="2.2"/><path d="M8 6H4v2a4 4 0 0 0 4 4M20 6h4v2a4 4 0 0 1-4 4M14 16v4M9 24h10l-1-4h-8z" fill="none" stroke="#2A2416" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  sDoc: '<svg viewBox="0 0 28 28"><rect x="6" y="3" width="16" height="22" rx="2.5" fill="#FFD54A" stroke="#2A2416" stroke-width="2.2"/><path d="M10 9h8M10 13h8M10 17h5" stroke="#2A2416" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  sShield: '<svg viewBox="0 0 28 28"><path d="M14 3l9 3v7c0 6-4 10-9 12-5-2-9-6-9-12V6z" fill="#FFD54A" stroke="#2A2416" stroke-width="2.2" stroke-linejoin="round"/><path d="M9.5 14l3 3 6-6" fill="none" stroke="#2A2416" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  sInfo: '<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#FFD54A" stroke="#2A2416" stroke-width="2.2"/><path d="M14 12v8" stroke="#2A2416" stroke-width="2.6" stroke-linecap="round"/><circle cx="14" cy="8" r="1.7" fill="#2A2416"/></svg>',
+};
+const NUM = ['①', '②', '③', '④'];
+/** 초록 머리띠 (시안 공통) */
+function hdr(title, { back = null, right = '', ico = '' } = {}) {
+  const b = back === 'history' ? `<button class="hdr-back" onclick="history.back()">${icon('back')}</button>` : back ? `<a class="hdr-back" href="${back}">${icon('back')}</a>` : '<span class="hdr-gap"></span>';
+  return `<header class="hdr">${b}<h1 class="hdr-title">${UI.sparkL}${ico}<span>${title}</span>${UI.spark}</h1><div class="hdr-right">${right || '<span class="hdr-gap"></span>'}</div></header>`;
+}
+
 // ---------- 라우터 ----------
 const PUBLIC = new Set(['login', 'email', 'signup', 'terms', 'doc']);
 const routes = { '': viewHome, play: viewPlay, ranking: viewRanking, results: viewResults, wrong: viewWrong, settings: viewSettings, account: viewAccount, doc: viewDoc, login: viewLogin, email: viewEmail, signup: viewSignup, terms: viewTerms, nickname: viewNickname };
@@ -158,20 +192,20 @@ function viewLogin() {
   if (store.user) { location.hash = '#/'; return; }
   $app.innerHTML = `
     <div class="screen login">
-      <div class="login-hero">${art('mascotHero', { cls: 'login-mascot' })}</div>
-      <div class="login-title"><h1>타임어택 한국사</h1><p>10문제, 문제당 20초. 빠르고 정확하게!</p></div>
+      <section class="login-scene scene">${art('mascotHero', { cls: 'login-mascot' })}</section>
+      <div class="login-title"><h1>${UI.sparkL}<span>타임어택 한국사</span>${UI.spark}</h1><p class="tag-pill">10문제, 문제당 20초. 빠르고 정확하게!</p></div>
       <div class="login-btns">
-        <button class="lbtn kakao" id="kakao"><b>K</b>카카오로 시작하기</button>
-        <button class="lbtn google" id="google"><b>G</b>Google로 시작하기</button>
-        <button class="lbtn email" id="email"><b>@</b>이메일로 시작하기</button>
-        <button class="btn-text" id="guest">게스트로 시작하기</button>
+        <button class="lbtn kakao" id="kakao"><i>${UI.kakao}</i><span>카카오로 시작하기</span></button>
+        <button class="lbtn google" id="google"><i>${UI.google}</i><span>Google로 시작하기</span></button>
+        <button class="lbtn email" id="email"><i>${UI.mail}</i><span>이메일로 시작하기</span></button>
       </div>
-      <p class="login-note">로그인하면 다른 기기에서도 기록이 이어져요. 게스트 기록은 이 기기에만 남아요.</p>
+      <button class="btn-link" id="guest">게스트로 시작하기</button>
+      <p class="info-pill">ⓘ 로그인하면 다른 기기에서도 기록이 이어져요</p>
     </div>`;
   const run = (fn, msg) => async (e) => {
-    e.currentTarget.disabled = true;
+    const b = e.currentTarget; b.disabled = true;
     try { await afterLogin(await fn(), msg); } catch (err) { const t = authErrorText(err); if (t) toast(t, 3000); }
-    e.currentTarget && (e.currentTarget.disabled = false);
+    b.disabled = false;
   };
   $app.querySelector('#kakao').onclick = KAKAO_ON ? run(loginKakao, '카카오 계정으로 로그인했어요!') : () => toast('카카오 로그인은 준비 중이에요. 다른 방법으로 시작해 주세요');
   if (!KAKAO_ON) $app.querySelector('#kakao').classList.add('soon');
@@ -179,10 +213,11 @@ function viewLogin() {
   $app.querySelector('#guest').onclick = run(loginGuest, '게스트로 시작해요');
   $app.querySelector('#email').onclick = () => { location.hash = '#/email'; };
 }
+
 function viewEmail() {
   $app.innerHTML = `
     <div class="screen form-screen">
-      <header class="topbar center"><a class="icon-btn back-btn" href="#/login">${icon('back')}</a><span class="title">이메일로 로그인</span><span style="width:40px"></span></header>
+      ${hdr('이메일로 로그인', { back: '#/login' })}
       <div class="form-card card">
         <input id="em" type="email" placeholder="이메일" autocomplete="email" />
         <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password" />
@@ -210,7 +245,7 @@ function viewEmail() {
 function viewSignup() {
   $app.innerHTML = `
     <div class="screen form-screen">
-      <header class="topbar center"><a class="icon-btn back-btn" href="#/email">${icon('back')}</a><span class="title">이메일로 가입하기</span><span style="width:40px"></span></header>
+      ${hdr('이메일로 가입하기', { back: '#/email' })}
       <div class="form-card card">
         <input id="em" type="email" placeholder="이메일" autocomplete="email" />
         <input id="pw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="new-password" />
@@ -233,18 +268,18 @@ const COLLECT = '· 모으는 것: 로그인 계정 정보(이메일, 계정 식
 function viewTerms() {
   if (!store.user) { location.hash = '#/login'; return; }
   $app.innerHTML = `
-    <div class="screen form-screen terms">
-      <header class="topbar center"><span style="width:40px"></span><span class="title">약관 동의</span><span style="width:40px"></span></header>
-      <div class="terms-hero">${art('mascotBook', { cls: 'terms-mascot' })}<p>시작하기 전에 아래 내용에 동의해 주세요.</p></div>
-      <div class="form-card card">
-        <label class="ck"><input type="checkbox" id="ck1"><span><b>[필수]</b> 개인정보 수집·이용 동의</span><button class="btn-text" id="more1">보기</button></label>
+    <div class="screen terms">
+      ${hdr('약관 동의', { back: '#/login' })}
+      <section class="talk-scene scene">${art('mascotHero', { cls: 'talk-mascot' })}<div class="bubble">시작하기 전에<br>아래 내용에<br>동의해 주세요</div></section>
+      <div class="ccard ck-list">
+        <label class="ck"><input type="checkbox" id="ck1"><span><b>[필수]</b> 개인정보 수집·이용 동의</span><button class="see" id="more1">보기 ›</button></label>
         <pre class="collect" id="collect" hidden>${esc(COLLECT)}</pre>
-        <label class="ck"><input type="checkbox" id="ck2"><span><b>[필수]</b> 이용약관 동의</span><a class="btn-text" href="#/doc/terms">보기</a></label>
-        <div class="ck plain"><span>개인정보 처리방침</span><a class="btn-text" href="#/doc/privacy">보기</a></div>
-        <div class="err" id="err"></div>
-        <button class="btn-primary" id="go">동의하고 시작하기</button>
-        <button class="btn-text" id="out">다른 계정으로 로그인</button>
+        <label class="ck"><input type="checkbox" id="ck2"><span><b>[필수]</b> 이용약관 동의</span><a class="see" href="#/doc/terms">보기 ›</a></label>
+        <div class="ck plain"><span>개인정보 처리방침</span><a class="see" href="#/doc/privacy">보기 ›</a></div>
       </div>
+      <div class="err" id="err"></div>
+      <button class="btn-primary big" id="go">동의하고 시작하기</button>
+      <button class="btn-link" id="out">다른 계정으로 로그인</button>
     </div>`;
   const $ = (id) => $app.querySelector('#' + id);
   $('more1').onclick = (e) => { e.preventDefault(); $('collect').hidden = !$('collect').hidden; };
@@ -253,18 +288,20 @@ function viewTerms() {
     $('go').disabled = true;
     try { await api('agree'); await loadConfig(true); location.hash = '#/'; } catch (e) { $('err').textContent = e.message; $('go').disabled = false; }
   };
-  $('out').onclick = async () => { await logout(); store.user = null; CONFIG = null; location.hash = '#/login'; };
+  const out = async (e) => { e?.preventDefault?.(); await logout(); store.user = null; CONFIG = null; location.hash = '#/login'; };
+  $('out').onclick = out;
+  $app.querySelector('.hdr-back').onclick = out;
 }
+
 function viewNickname() {
   $app.innerHTML = `
-    <div class="screen form-screen">
-      <header class="topbar center"><span style="width:40px"></span><span class="title">닉네임 만들기</span><span style="width:40px"></span></header>
-      <div class="terms-hero">${art('mascotHero', { cls: 'terms-mascot' })}<p>랭킹에 보일 이름을 정해 주세요.<br>같은 이름은 하나만 쓸 수 있어요.</p></div>
-      <div class="form-card card">
-        <input id="nick" maxlength="10" placeholder="한글/영문/숫자 2~10자" autocomplete="off" />
-        <div class="err" id="err"></div>
-        <button class="btn-primary" id="go">시작하기</button>
-      </div>
+    <div class="screen nickname">
+      ${hdr('닉네임 만들기')}
+      <section class="talk-scene scene center">${art('mascotCorrect', { cls: 'talk-mascot big' })}</section>
+      <div class="pill-bubble">${UI.sparkL}랭킹에 보일 이름을 정해 주세요${UI.spark}</div>
+      <label class="input-row"><i>${UI.pencil}</i><input id="nick" maxlength="10" placeholder="한글/영문/숫자 2~10자" autocomplete="off" /></label>
+      <div class="err" id="err"></div>
+      <button class="btn-primary big" id="go">시작하기</button>
     </div>`;
   const input = $app.querySelector('#nick');
   const go = async () => {
@@ -279,16 +316,17 @@ function viewNickname() {
 const PROVIDER_NAME = { guest: '게스트', google: '구글', kakao: '카카오', email: '이메일', other: '로그인' };
 function viewSettings() {
   const kind = providerOf(store.user);
+  const row = (ico, label, val, attrs) => `<${attrs.href ? 'a' : 'button'} class="set-row ccard" ${attrs.href ? `href="${attrs.href}"` : `id="${attrs.id}"`}><i>${ico}</i><span>${label}</span><em>${val || ''}</em>${icon('chev')}</${attrs.href ? 'a' : 'button'}>`;
   $app.innerHTML = `
     <div class="screen settings">
-      <header class="topbar center"><a class="icon-btn back-btn" href="#/">${icon('back')}</a><span class="title">설정</span><span style="width:40px"></span></header>
-      <div class="set-list card">
-        <a class="set-row" href="#/account"><span>계정</span><em>${PROVIDER_NAME[kind] || ''} · ${esc(store.nick)}</em>${icon('chev')}</a>
-        <button class="set-row" id="nick"><span>닉네임 바꾸기</span><em>${esc(store.nick)}</em>${icon('chev')}</button>
-        <button class="set-row" id="rules"><span>점수 규칙</span><em></em>${icon('chev')}</button>
-        <a class="set-row" href="#/doc/terms"><span>이용약관</span><em></em>${icon('chev')}</a>
-        <a class="set-row" href="#/doc/privacy"><span>개인정보 처리방침</span><em></em>${icon('chev')}</a>
-        <div class="set-row static"><span>버전</span><em>1.0.0</em></div>
+      ${hdr('설정', { back: '#/' })}
+      <div class="set-list">
+        ${row(UI.sUser, '계정', `${PROVIDER_NAME[kind] || ''} · ${esc(store.nick)}`, { href: '#/account' })}
+        ${row(UI.sPencil, '닉네임 바꾸기', esc(store.nick), { id: 'nick' })}
+        ${row(UI.sTrophy, '점수 규칙', '', { id: 'rules' })}
+        ${row(UI.sDoc, '이용약관', '', { href: '#/doc/terms' })}
+        ${row(UI.sShield, '개인정보 처리방침', '', { href: '#/doc/privacy' })}
+        <div class="set-row ccard static"><i>${UI.sInfo}</i><span>버전</span><em>1.0.0</em></div>
       </div>
       <p class="set-foot">BROWN CRAB · 타임어택 한국사</p>
     </div>`;
@@ -298,15 +336,16 @@ function viewSettings() {
 function viewAccount() {
   const u = store.user, kind = providerOf(u);
   $app.innerHTML = `
-    <div class="screen settings">
-      <header class="topbar center"><a class="icon-btn back-btn" href="#/settings">${icon('back')}</a><span class="title">계정</span><span style="width:40px"></span></header>
-      <div class="card account-card">
+    <div class="screen settings account">
+      ${hdr('계정', { back: '#/settings' })}
+      <div class="ccard account-card">
         ${art('mascotHero', { cls: 'account-mascot' })}
-        <b>${esc(store.nick)}</b>
-        <span>${kind === 'guest' ? '게스트로 하고 있어요.<br>계정을 연결하면 다른 기기에서도 이어서 할 수 있어요.' : `${PROVIDER_NAME[kind]} 계정${u?.email ? '<br>' + esc(u.email) : ''}`}</span>
+        <div><b class="name-chip">${esc(store.nick)}</b>
+        <p>${kind === 'guest' ? '게스트로 하고 있어요.<br>계정을 연결하면 다른 기기에서도 이어서 할 수 있어요.' : `${PROVIDER_NAME[kind]} 계정으로 로그인했어요.${u?.email ? '<br>' + esc(u.email) : ''}`}</p></div>
       </div>
-      ${kind === 'guest' ? `<div class="login-btns compact"><button class="lbtn kakao ${KAKAO_ON ? '' : 'soon'}" id="kakao"><b>K</b>카카오 계정 연결</button><button class="lbtn google" id="google"><b>G</b>Google 계정 연결</button></div>` : ''}
-      <div class="account-actions"><button class="btn-ghost" id="out">로그아웃</button><button class="btn-text danger" id="del">계정 삭제</button></div>
+      ${kind === 'guest' ? `<div class="login-btns"><button class="lbtn kakao ${KAKAO_ON ? '' : 'soon'}" id="kakao"><i>${UI.kakao}</i><span>카카오 계정 연결</span></button><button class="lbtn google" id="google"><i>${UI.google}</i><span>Google 계정 연결</span></button></div>` : ''}
+      <button class="btn-ghost wide" id="out">로그아웃</button>
+      <button class="btn-link danger" id="del">계정 삭제</button>
     </div>`;
   const link = (fn) => async () => { try { const nu = await fn(); if (nu) { store.user = nu; toast('계정을 연결했어요! 기록은 그대로예요'); viewAccount(); } } catch (e) { const t = authErrorText(e); if (t) toast(t, 3000); } };
   $app.querySelector('#google')?.addEventListener('click', link(loginGoogle));
@@ -321,13 +360,13 @@ function viewAccount() {
     store.user = null; CONFIG = null; toast('계정을 삭제했어요'); location.hash = '#/login';
   };
 }
-// 이용약관 · 개인정보 처리방침 (앱 안 화면, 뒤로 버튼으로 돌아옴)
+
 const DOCS = { terms: ['이용약관', 'legal/terms.txt', null], privacy: ['개인정보 처리방침', 'https://brown-crab.com/privacy.html', 'main'] };
 async function viewDoc(k) {
   const [title, url, sel] = DOCS[k] || DOCS.terms;
   $app.innerHTML = `
     <div class="screen doc">
-      <header class="topbar center"><button class="icon-btn back-btn" onclick="history.back()">${icon('back')}</button><span class="title">${title}</span><span style="width:40px"></span></header>
+      ${hdr(title, { back: 'history' })}
       <div class="card doc-body" id="body">불러오는 중이에요…</div>
     </div>`;
   try {
@@ -440,34 +479,29 @@ function watermarkUrl(text) {
 async function viewHome() {
   $app.innerHTML = `
     <div class="screen home">
-      <header class="topbar">
-        <h1>${art('logo', { cls: 'logo' })}${esc(CONFIG.series.shortTitle)}</h1><div class="spacer"></div>
-        <a class="icon-btn" href="#/settings" aria-label="설정">${icon('gear')}</a>
-      </header>
-      <section class="hero">
-        <div class="hero-text">
-          <h2>${esc(store.nick)}님,<br>오늘도<br><span class="underline">한국사 도전!</span></h2>
-          <div class="week-badge" id="week-badge" hidden></div>
+      <header class="hdr hdr-home"><h1 class="hdr-brand">${art('logo', { cls: 'brand-logo' })}<span>${esc(CONFIG.series.shortTitle)}</span></h1><a class="hdr-gear" href="#/settings" aria-label="설정">${icon('gear')}</a></header>
+      <section class="home-hero scene">
+        <h2 class="greet"><span class="hl">${esc(store.nick)}</span>님,${UI.spark}<br>오늘도 한국사 도전!</h2>
+        <div class="rank-pill" id="week-badge">${art('crown', { cls: 'pill-crown' })}<span>이번 주 기록에 도전!</span></div>
+        <div class="hero-stage">
+          ${eraArt('조선 전기', { cls: 'home-palace' })}
+          ${art('mascotHero', { cls: 'home-mascot' })}
         </div>
-        ${art('homeScene', { cls: 'hero-scene' })}
-        ${art('mascotHero', { cls: 'hero-mascot' })}
       </section>
-      <button class="btn-primary play-btn" id="play"><span class="play-ico">${icon('play')}</span>문제 풀기</button>
+      <button class="btn-primary play-btn" id="play"><span class="play-tri">${icon('play')}</span>문제 풀기${UI.spark}</button>
       <p class="play-sub">${CONFIG.series.questionCount}문제 · 문제당 ${CONFIG.scoring.timeLimitMs / 1000}초 · <a href="#" id="rules">점수 규칙</a><span id="left"></span></p>
       <section class="tiles three">
-        <a class="tile card" href="#/ranking">${art('iconTrophy', { cls: 'tile-ico' })}주간 랭킹</a>
-        <a class="tile card" href="#/results">${art('iconChart', { cls: 'tile-ico' })}내 결과 보기</a>
-        <a class="tile card" href="#/wrong">${art('iconStar', { cls: 'tile-ico' })}오답 노트</a>
+        <a class="tile ccard" href="#/ranking">${art('iconTrophy', { cls: 'tile-ico' })}주간 랭킹</a>
+        <a class="tile ccard" href="#/results">${art('iconChart', { cls: 'tile-ico' })}내 결과 보기</a>
+        <a class="tile ccard" href="#/wrong">${art('iconStar', { cls: 'tile-ico' })}오답 노트</a>
       </section>
     </div>`;
   $app.querySelector('#play').onclick = () => { location.hash = '#/play'; };
   $app.querySelector('#rules').onclick = (e) => { e.preventDefault(); showRules(); };
   if (FRIEND) toast(`${FRIEND.by ? FRIEND.by + '님의 ' : ''}기록 ${fmt(FRIEND.from)}점에 도전해 보세요!`, 3200);
   api('ranking', { which: 'this' }).then((r) => {
-    const b = $app.querySelector('#week-badge');
-    if (!b) return;
-    b.hidden = false;
-    b.innerHTML = r.me ? `${icon('trophy').replace('<svg', '<svg width="14" height="14"')} 이번 주 ${fmt(r.me.rank)}위 · ${fmt(r.me.score)}점` : `이번 주 참가자 ${fmt(r.participants)}명`;
+    const b = $app.querySelector('#week-badge span'); if (!b) return;
+    b.innerHTML = r.me ? `이번 주 <b>${fmt(r.me.rank)}위</b> · <b>${fmt(r.me.score)}점</b>` : `이번 주 참가자 <b>${fmt(r.participants)}명</b>`;
   }).catch(() => {});
   if (CONFIG.playsLeftToday != null) $app.querySelector('#left').textContent = ` · 오늘 남은 도전 ${CONFIG.playsLeftToday}회`;
 }
@@ -510,15 +544,21 @@ function fitText(box, sel, max, min) {
 function layoutQuestion() {
   const main = $app.querySelector('#q-main'), artEl = $app.querySelector('#q-art'), card = $app.querySelector('#q-card');
   if (!main || !card) return;
-  const h = card.clientHeight;
-  fitText(main, '.q-text', Math.min(30, Math.max(19, h * 0.115)), 13);
-  // 그림: 글자 끝(마지막 줄 오른쪽 끝)과 겹치면 숨김
+  const h = card.clientHeight, max = Math.min(30, Math.max(19, h * 0.115));
+  main.querySelectorAll('.art-push,.art-hole').forEach((e) => e.remove());
+  // 그림(시안 5: 문제 칸 오른쪽 아래)이 들어갈 자리를 비워 두고 글자가 그 둘레로 흐르게 함
   if (artEl) {
     artEl.hidden = false;
-    const a = artEl.getBoundingClientRect(), t = main.querySelector('.q-text');
-    const range = document.createRange(); range.selectNodeContents(t);
-    const overlap = [...range.getClientRects()].some((r) => r.right > a.left + 4 && r.bottom > a.top + 4);
-    artEl.hidden = overlap;
+    const m = main.getBoundingClientRect(), a = artEl.getBoundingClientRect();
+    const hw = Math.max(0, m.right - a.left + 6), hh = Math.max(0, m.bottom - a.top + 2);
+    main.insertAdjacentHTML('afterbegin', `<span class="art-push" style="height:${Math.max(0, m.height - hh)}px"></span><span class="art-hole" style="width:${hw}px;height:${hh}px"></span>`);
+  }
+  fitText(main, '.q-text', max, 13);
+  // 가장 작은 글씨로도 넘치면 그림을 빼고 다시 맞춤 (스크롤은 절대 없음)
+  if (artEl && main.scrollHeight > main.clientHeight + 1) {
+    artEl.hidden = true;
+    main.querySelectorAll('.art-push,.art-hole').forEach((e) => e.remove());
+    fitText(main, '.q-text', max, 13);
   }
 }
 function showAnswer({ correctIndex, chosenIndex, isCorrect, timeout, title, sub, explanation }) {
@@ -532,7 +572,7 @@ function showAnswer({ correctIndex, chosenIndex, isCorrect, timeout, title, sub,
   card.classList.add(isCorrect ? 'is-ok' : 'is-no');
   card.innerHTML = `
     <div class="feedback ${isCorrect ? 'ok' : 'no'}">
-      ${art(isCorrect ? 'mascotCorrect' : timeout ? 'mascotTimeout' : 'mascotWrong', { cls: 'fb-mascot' })}
+      <div class="fb-art">${UI.sparkL}${art(isCorrect ? 'mascotCorrect' : timeout ? 'mascotTimeout' : 'mascotWrong', { cls: 'fb-mascot' })}</div>
       <div class="fb-body" id="fb-body">
         <b class="fb-title">${title}</b>${sub ? `<span class="fb-sub">${sub}</span>` : ''}
         ${explanation ? `<p class="fb-exp">${esc(explanation.replace(/\*\*/g, ''))}</p>` : ''}
@@ -541,28 +581,47 @@ function showAnswer({ correctIndex, chosenIndex, isCorrect, timeout, title, sub,
   fitText($app.querySelector('#fb-body'), '.fb-exp', 15, 11);
 }
 
+function readyHtml() {
+  const s = CONFIG.scoring;
+  return `
+    <div class="screen ready">
+      ${hdr('준비', { back: '#/' })}
+      <section class="talk-scene scene">${art('mascotBook', { cls: 'talk-mascot' })}<div class="ready-talk"><h2>${UI.sparkL}준비됐나요?</h2><div class="bubble small">문제가 뜨는 순간부터<br>시간이 흘러요</div></div></section>
+      <div class="ready-grid">
+        <div class="rcard">${art('iconLearn', { cls: 'rc-ico' })}<div><b><mark>${CONFIG.series.questionCount}문제</mark></b><span>시대별로 골고루</span></div></div>
+        <div class="rcard"><i class="rc-ico">${UI.stopwatch}</i><div><b><mark>${s.timeLimitMs / 1000}초</mark></b><span>문제당 제한시간</span></div></div>
+        <div class="rcard">${art('iconTrophy', { cls: 'rc-ico' })}<div><b><small>최고</small><mark>${fmt(s.maxPoints)}점</mark></b><span>빨리 맞힐수록 높아요</span></div></div>
+        <div class="rcard warn"><i class="rc-ico">${UI.xcircle}</i><div><b><mark>오답 0점</mark></b><span>나가도 시간은 흘러요</span></div></div>
+      </div>
+      <button class="btn-primary big start" id="go"><span class="play-tri">${icon('play')}</span>시작!${UI.spark}</button>
+    </div>`;
+}
+
+function finishHtml(runId, score, correct) {
+  const beat = FRIEND && score > FRIEND.from;
+  return `
+    <div class="screen finish">
+      <div class="finish-art">${art('mascotFinish', { cls: 'finish-mascot' })}</div>
+      <div class="score-cloud">${UI.laurel(false)}<div class="sc-in"><div class="big">${fmt(score)}<small>점</small></div><div class="ok-pill">정답 ${correct} / ${CONFIG.series.questionCount}</div></div>${UI.laurel(true)}</div>
+      <div class="rank-pill orange" id="rank-note">${art('crown', { cls: 'pill-crown' })}<span>순위 확인 중…</span></div>
+      ${FRIEND ? `<div class="friend-note">${beat ? `${esc(FRIEND.by || '친구')}님의 ${fmt(FRIEND.from)}점을 넘었어요!` : `${esc(FRIEND.by || '친구')}님 기록 ${fmt(FRIEND.from)}점까지 ${fmt(FRIEND.from - score)}점 남았어요`}</div>` : ''}
+      <button class="btn-share" id="share"><i>${UI.share}</i>자랑하기</button>
+      <div class="actions-row">
+        <button class="btn-card" id="adretry"><i>${UI.video}</i><span>광고 보고 다시 도전<small id="ad-left"></small></span></button>
+        <a class="btn-card" href="#/ranking">${art('iconTrophy', { cls: 'bc-ico' })}<span>주간 랭킹</span></a>
+      </div>
+      <a class="btn-link" href="#/results/${runId}">풀이 상세 보기</a>
+    </div>`;
+}
+
+const ktime = (ms) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 // ---------- 문제 풀기 ----------
 async function viewPlay() {
   const runId = CONFIG.me?.currentRunId;
   if (runId) {
     try { const c = await api('currentQuestion', { runId }); if (!c.done) return playLoop(runId, c); } catch { /* 새로 시작 */ }
   }
-  const s = CONFIG.scoring;
-  $app.innerHTML = `
-    <div class="screen ready">
-      <div class="quiz-head"><a class="icon-btn back-btn" href="#/">${icon('back')}</a><div class="count">준비</div><div style="width:40px"></div></div>
-      <div class="ready-hero">
-        ${art('mascotBook', { cls: 'ready-mascot' })}
-        <div class="ready-title"><h2>준비됐나요?</h2><p>문제가 뜨는 순간부터 시간이 흘러요</p></div>
-      </div>
-      <div class="ready-grid">
-        <div class="rcard"><b>${CONFIG.series.questionCount}문제</b><span>시대별로 골고루</span></div>
-        <div class="rcard"><b>${s.timeLimitMs / 1000}초</b><span>문제당 제한시간</span></div>
-        <div class="rcard"><b>최고 ${fmt(s.maxPoints)}점</b><span>빨리 맞힐수록 높아요</span></div>
-        <div class="rcard warn"><b>오답 0점</b><span>나가도 시간은 흘러요</span></div>
-      </div>
-      <button class="btn-primary ready-go" id="go">시작!</button>
-    </div>`;
+  $app.innerHTML = readyHtml();
   $app.querySelector('#go').onclick = (e) => startNewRun(e.currentTarget);
 }
 async function startNewRun(btn) {
@@ -675,24 +734,10 @@ function finish(runId, tally) {
   secure(false); bannerAd(false);
   setTabbar(false);
   const score = tally.score, correct = tally.correct;
-  const beat = FRIEND && score > FRIEND.from;
-  $app.innerHTML = `
-    <div class="screen finish">
-      <div class="finish-art">${art('mascotFinish', { cls: 'finish-mascot' })}</div>
-      <div class="big">${fmt(score)}<small>점</small></div>
-      <div class="sub">정답 ${correct} / ${CONFIG.series.questionCount}</div>
-      <div class="rank-note" id="rank-note">순위 확인 중…</div>
-      ${FRIEND ? `<div class="friend-note">${beat ? `${esc(FRIEND.by || '친구')}님의 ${fmt(FRIEND.from)}점을 넘었어요!` : `${esc(FRIEND.by || '친구')}님 기록 ${fmt(FRIEND.from)}점까지 ${fmt(FRIEND.from - score)}점 남았어요`}</div>` : ''}
-      <div class="actions">
-        <div class="actions-row main"><button class="btn-primary" id="again">다시 도전</button><button class="btn-share" id="share">자랑하기</button></div>
-        <div class="actions-row"><button class="btn-ghost" id="adretry">광고 보고 다시 도전<small id="ad-left"></small></button><a class="btn-ghost" href="#/ranking">주간 랭킹</a></div>
-        <a class="btn-text" href="#/results/${runId}">풀이 상세 보기</a>
-      </div>
-    </div>`;
+  $app.innerHTML = finishHtml(runId, score, correct);
   const adBtn = $app.querySelector('#adretry');
   const paintAd = () => { const left = CONFIG.adRetryLeft ?? 1; $app.querySelector('#ad-left').textContent = left ? '오늘 1회' : '오늘 사용함'; adBtn.disabled = !left; };
   paintAd();
-  $app.querySelector('#again').onclick = (e) => startNewRun(e.currentTarget);
   $app.querySelector('#share').onclick = () => share(score, correct);
   adBtn.onclick = async () => {
     adBtn.disabled = true;
@@ -701,7 +746,7 @@ function finish(runId, tally) {
   };
   Promise.all([api('ranking', { which: 'this' }), loadConfig(true)]).then(([rk]) => {
     const el = $app.querySelector('#rank-note'); if (!el) return;
-    el.textContent = rk?.me ? `이번 주 내 순위 ${fmt(rk.me.rank)}위 · 최고 ${fmt(rk.me.score)}점` : '이번 주 기록에 올라갔어요';
+    el.querySelector('span').textContent = rk?.me ? `이번 주 내 순위 ${fmt(rk.me.rank)}위 · 최고 ${fmt(rk.me.score)}점` : '이번 주 기록에 올라갔어요';
     if ($app.querySelector('#ad-left')) paintAd();
   }).catch(() => { const el = $app.querySelector('#rank-note'); if (el) el.hidden = true; });
 }
@@ -754,90 +799,86 @@ async function viewResults(id) {
   const r = await api('myRuns');
   const acc = r.accuracy;
   $app.innerHTML = `
-    <header class="topbar"><h1>${icon('barsColor').replace('<svg', '<svg width="30" height="30"')}내 결과 보기</h1></header>
-    <section class="stat-scroll">
-      <div><div class="k">총 풀이</div><div class="v">${fmt(r.total)}<small>회</small></div></div>
-      <div><div class="k">평균 점수</div><div class="v">${fmt(r.avgScore)}</div></div>
-    </section>
-    <section class="card acc-card">
-      <div><div class="k">평균 정답률</div><div class="v">${acc}%</div></div>
-      <div class="donut" style="background:conic-gradient(var(--green) ${acc * 3.6}deg, #E3EBE5 0)"></div>
-      ${art('resultDeco', { cls: 'tower' })}
-    </section>
-    <h2 class="sec-title">최근 풀이 기록</h2>
-    ${r.recent.length ? `<section class="card rec-list">${r.recent.map((x) => `
-      <a class="rec-row" href="#/results/${x.id}"><span>${kdate(x.finished_at)}</span><span class="s">${fmt(x.total_score)}점</span>${icon('chev')}</a>`).join('')}</section>`
-      : `<div class="empty">${art('emptyState')}아직 풀이 기록이 없어요.<br><a href="#/play" style="color:var(--green);font-weight:700">첫 도전 시작하기 →</a></div>`}
-    ${r.total ? `<p class="week-note">최고 점수 ${fmt(r.bestScore)}점</p>` : ''}`;
+    <div class="results-page">
+      ${hdr('내 결과 보기', { ico: art('iconChart', { cls: 'hdr-ico' }) })}
+      <section class="scroll-banner"><div class="sb-in">총 풀이 <b>${fmt(r.total)}회</b><i></i>평균 점수 <b>${fmt(r.avgScore)}</b></div></section>
+      <section class="ccard acc-card scene">
+        <div class="acc-left"><div class="k">평균 정답률</div><div class="v">${acc}%</div>
+          <div class="donut" style="background:conic-gradient(#2E9A5E ${acc * 3.6}deg, #C9D3CC 0)"><span>${acc}%</span></div></div>
+        ${art('resultDeco', { cls: 'tower' })}
+      </section>
+      <section class="ccard rec-card">
+        <h2 class="rec-title"><i>${UI.clipboard}</i>최근 풀이 기록</h2>
+        ${r.recent.length ? r.recent.map((x, i) => `
+          <a class="rec-row ${i === 0 ? 'first' : ''}" href="#/results/${x.id}"><i>${UI.calendar}</i><span class="d">${kdate(x.finished_at)}</span><span class="t">${ktime(x.finished_at)}</span><span class="s">${fmt(x.total_score)}점</span>${icon('chev')}</a>`).join('')
+          : `<div class="empty">${art('emptyState')}아직 풀이 기록이 없어요.<br><a href="#/play" class="go-link">첫 도전 시작하기 →</a></div>`}
+      </section>
+      ${r.total ? `<p class="week-note">최고 점수 ${fmt(r.bestScore)}점</p>` : ''}
+    </div>`;
 }
 
 async function viewResultDetail(id) {
   const d = await api('runDetail', { runId: id });
   const wrong = d.questions.filter((q) => !q.isCorrect).length;
   $app.innerHTML = `
-    <header class="topbar center"><a class="icon-btn back-btn" href="#/results">${icon('back')}</a><span class="title">풀이 결과 상세</span>${art('crown', { cls: 'head-deco' })}</header>
-    <section class="card detail-head">
-      <div class="date">${kdate(d.finishedAt || d.startedAt, true)}</div>
-      <div class="row"><span class="score">${fmt(d.totalScore)}점</span>
-        <span class="cnt">정답 <b class="ok">${d.correctCount}</b> &nbsp;|&nbsp; 오답 <b class="no">${wrong}</b></span></div>
-      <div class="meta">총 소요시간 ${sec(d.totalTimeMs)}${d.status !== 'FINISHED' ? ' · 완료하지 않은 판' : ''}</div>
-    </section>
-    ${d.questions.map((q) => `
-      <section class="card dq">
-        <div class="dq-top"><h3>${q.seq}번 문제</h3>
-          ${q.isCorrect ? `<span class="badge ok">${icon('checkCircle')}정답</span>` : q.status === 'TIMEOUT' ? `<span class="badge to">⏱ 시간초과</span>` : `<span class="badge no">${icon('xCircle')}오답</span>`}</div>
-        <p class="q">${esc(q.question)}</p>
-        <div class="opts">${q.options.map((o, i) => `<div class="o ${i === q.correctIndex ? 'correct' : i === q.chosenIndex ? 'wrong' : ''}">${esc(o)}</div>`).join('')}</div>
-        <div class="explain"><div class="t">${icon('book')}해설</div><p>${esc((q.explanation || '').replace(/\*\*/g, ''))}</p>${art('mascotWrite')}</div>
-        <div class="time">${esc(q.era)} · ${sec(q.elapsedMs || 0)} · <b>${fmt(q.points)}점</b></div>
-      </section>`).join('')}`;
+    <div class="results-page">
+      ${hdr('풀이 결과 상세', { back: '#/results', right: art('crown', { cls: 'hdr-crown' }) })}
+      <section class="score-card">${UI.laurel(false)}<div class="sc-in">
+        <div class="date"><i>${UI.calendar}</i>${kdate(d.finishedAt || d.startedAt, true)}</div>
+        <div class="big">${fmt(d.totalScore)}<small>점</small></div>
+        <div class="cnt-pill">정답 <b class="ok">${d.correctCount}</b><i></i>오답 <b class="no">${wrong}</b></div></div>${UI.laurel(true)}</section>
+      ${d.questions.map((q) => {
+        const { lead, clue } = splitQuestion(q.question);
+        const st = q.isCorrect ? 'ok' : 'no';
+        return `
+        <section class="ccard dq">
+          <div class="dq-head ${st}">${q.seq}번 문제 <b>[${q.isCorrect ? '정답' : q.status === 'TIMEOUT' ? '시간 초과' : '오답'}]</b><em>${sec(q.elapsedMs || 0)} · ${fmt(q.points)}점</em></div>
+          ${lead ? `<p class="dq-lead">${esc(lead)}</p>` : ''}
+          <div class="clue-box">${esc(clue)}</div>
+          <div class="num-opts">${q.options.map((o, i) => `<div class="no-opt ${i === q.correctIndex ? 'correct' : i === q.chosenIndex ? 'wrong' : ''}"><span>${NUM[i]}</span>${esc(o)}${i === q.correctIndex ? `<i class="ok-mark">${icon('check')}</i>` : i === q.chosenIndex ? `<i class="no-mark">${icon('x')}</i>` : ''}</div>`).join('')}</div>
+          <div class="explain-box"><b class="ex-tag">해설</b><p>${esc((q.explanation || '').replace(/\*\*/g, ''))}</p></div>
+        </section>`;
+      }).join('')}
+    </div>`;
 }
-
 
 // ---------- 오답 노트 (한 화면: 카드 한 장씩 넘기기) ----------
 async function viewWrong() {
   const list = await api('wrongNotes');
-  let filter = 'todo';
-  let idx = 0;
+  let filter = 'todo', idx = 0;
   $app.innerHTML = `
     <div class="screen wrong">
-      <header class="topbar"><h1>${art('iconStar', { cls: 'logo' })}오답 노트</h1></header>
-      <div class="filter-row"><button data-f="todo" class="on">복습 필요</button><button data-f="all">전체 (${list.length})</button></div>
+      ${hdr('오답 노트', { ico: art('iconStar', { cls: 'hdr-ico' }) })}
+      <div class="seg2"><button data-f="todo" class="on">복습 필요</button><button data-f="all">전체 (${list.length})</button></div>
       <div class="note-wrap" id="note"></div>
     </div>`;
   const items = () => list.filter((n) => filter === 'all' || !n.resolved);
   const render = () => {
-    const arr = items();
-    const box = $app.querySelector('#note');
-    if (!arr.length) {
-      box.innerHTML = `<div class="empty">${art('emptyState')}${filter === 'todo' ? '복습할 오답이 없어요. 훌륭해요!' : '아직 틀린 문제가 없어요.'}</div>`;
-      return;
-    }
+    const arr = items(), box = $app.querySelector('#note');
+    if (!arr.length) { box.innerHTML = `<div class="ccard empty">${art('emptyState')}${filter === 'todo' ? '복습할 오답이 없어요. 훌륭해요!' : '아직 틀린 문제가 없어요.'}</div>`; return; }
     idx = Math.min(idx, arr.length - 1);
-    const n = arr[idx];
-    const opts = [n.option_1, n.option_2, n.option_3, n.option_4];
+    const n = arr[idx], opts = [n.option_1, n.option_2, n.option_3, n.option_4];
+    const { lead, clue } = splitQuestion(n.question);
     box.innerHTML = `
-      <article class="card note">
-        <div class="note-head">${eraArt(n.era, { cls: 'note-era' })}<span class="chip">${esc(n.era)}</span><span class="muted">틀린 횟수 ${n.wrong_count}${n.resolved ? ' · <b style="color:var(--green)">다시 맞힘 ✓</b>' : ''}</span></div>
-        ${questionHtml(n.question)}
-        <div class="note-opts">${opts.map((o, k) => `<div class="o ${k + 1 === n.correct_option ? 'correct' : ''}">${esc(o)}</div>`).join('')}</div>
-        <div class="explain"><div class="t">${icon('book')}해설</div><p>${esc((n.explanation || '').replace(/\*\*/g, ''))}</p></div>
+      <article class="ccard note">
+        <div class="note-top">${eraArt(n.era, { cls: 'note-era' })}<div class="note-meta"><div class="chips"><span class="chip">${esc(n.era)}</span><span class="cnt-chip">틀린 횟수 <b>${n.wrong_count}</b></span></div>${lead ? `<p class="dq-lead">${esc(lead)}</p>` : ''}${n.resolved ? '<p class="resolved">다시 맞혔어요 ✓</p>' : ''}</div></div>
+        <div class="clue-box center" id="clue">${esc(clue)}</div>
+        <div class="num-opts">${opts.map((o, k) => `<div class="no-opt ${k + 1 === n.correct_option ? 'correct' : ''}"><span>${NUM[k]}</span>${esc(o)}${k + 1 === n.correct_option ? `<i class="ok-mark">${icon('check')}</i>` : ''}</div>`).join('')}</div>
+        <div class="explain-box green" id="ex"><b class="ex-tag">해설</b><p>${esc((n.explanation || '').replace(/\*\*/g, ''))}</p></div>
       </article>
-      <div class="pager"><button class="btn-ghost" id="prev" ${idx === 0 ? 'disabled' : ''}>이전</button><span>${idx + 1} / ${arr.length}</span><button class="btn-ghost" id="nxt" ${idx >= arr.length - 1 ? 'disabled' : ''}>다음</button></div>`;
+      <div class="pager2"><button class="pg prev" id="prev" ${idx === 0 ? 'disabled' : ''}>${icon('back')}이전</button><span class="pg-n">${idx + 1} / ${arr.length}</span><button class="pg next" id="nxt" ${idx >= arr.length - 1 ? 'disabled' : ''}>다음${icon('chev')}</button></div>`;
+    { const nt = box.querySelector('.note'); fitText(nt, '.clue-box', 22, 13); if (nt.scrollHeight > nt.clientHeight + 1) fitText(nt, '.explain-box p', 14, 11); }
     box.querySelector('#prev').onclick = () => { idx--; render(); };
     box.querySelector('#nxt').onclick = () => { idx++; render(); };
   };
-  $app.querySelector('.filter-row').onclick = (e) => {
-    const b = e.target.closest('button');
-    if (!b) return;
+  $app.querySelector('.seg2').onclick = (e) => {
+    const b = e.target.closest('button'); if (!b) return;
     filter = b.dataset.f; idx = 0;
-    $app.querySelectorAll('.filter-row button').forEach((x) => x.classList.toggle('on', x === b));
+    $app.querySelectorAll('.seg2 button').forEach((x) => x.classList.toggle('on', x === b));
     render();
   };
   render();
 }
-
-
 // ---------- 시작 ----------
 (async () => {
   store.user = (await redirectResult()) || (await currentUser());
