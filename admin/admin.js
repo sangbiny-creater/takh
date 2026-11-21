@@ -34,7 +34,9 @@ const accColor = (a) => (a == null ? '#C8D0CB' : a >= 80 ? '#47A276' : a >= 50 ?
 const accBar = (a) => `<div class="acc-bar"><div class="bar"><i style="width:${a ?? 0}%;background:${accColor(a)}"></i></div><b>${pct(a)}</b></div>`;
 const REVIEW = { NEEDS_REVIEW: ['검수 필요', 'orange'], APPROVED: ['검수 완료', 'green'], REJECTED: ['반려', 'red'] };
 const reviewPill = (s) => `<span class="pill ${REVIEW[s]?.[1] || 'gray'}">${REVIEW[s]?.[0] || esc(s)}</span>`;
-const statusPill = (s) => (s === 'ACTIVE' ? '<span class="pill blue">출제중</span>' : '<span class="pill gray">비활성</span>');
+const statusPill = (s) => (s === 'ACTIVE' ? '<span class="pill blue">출제중</span>' : s === 'DELETED' ? '<span class="pill red">삭제됨</span>' : '<span class="pill gray">비활성</span>');
+const STATUS_LABEL = { ACTIVE: '출제중', INACTIVE: '비활성', DELETED: '삭제됨' };
+const NUMS = ['①', '②', '③', '④'];
 const FLAG_LABEL = {
   distractor: '오답 선택지 쏠림 (정답 오류 의심)',
   low_accuracy: '정답률 30% 미만',
@@ -132,7 +134,7 @@ async function viewQuestions(_p, query) {
       <select class="in" id="f-period"><option value="">세부 시기 전체</option></select>
       <select class="in" id="f-difficulty"><option value="">난이도</option>${opt(META.enums.difficulties, st.difficulty)}</select>
       <select class="in" id="f-review_status"><option value="">검수 상태</option>${opt(META.enums.reviewStatuses, st.review_status, (x) => REVIEW[x][0])}</select>
-      <select class="in" id="f-status"><option value="">출제 상태</option>${opt(META.enums.statuses, st.status, (x) => (x === 'ACTIVE' ? '출제중' : '비활성'))}</select>
+      <select class="in" id="f-status"><option value="">출제 상태</option>${opt(META.enums.statuses, st.status, (x) => STATUS_LABEL[x] || x)}</select>
       <select class="in" id="f-source_type"><option value="">출처</option>${opt(META.enums.sourceTypes, st.source_type)}</select>
       <input class="in" id="f-fact_group_id" placeholder="지식 그룹 (F-001)" value="${esc(st.fact_group_id)}" style="width:140px">
       <button class="btn sm" id="reset">초기화</button>
@@ -148,24 +150,31 @@ async function viewQuestions(_p, query) {
   };
   fillPeriods();
 
-  const SORTABLE = { id: 'ID', era: '시대', topic: '키워드', difficulty: '난이도', attempts: '출제', accuracy: '정답률', avg_correct_ms: '평균 정답시간', updated_at: '수정일' };
+  const SORTABLE = { id: 'ID', era: '시대', topic: '키워드', difficulty: '난이도', served: '출제 횟수', attempts: '응답', accuracy: '정답률', avg_correct_ms: '평균 정답시간', updated_at: '수정일' };
   const th = (k, label = SORTABLE[k]) => `<th class="sort" data-s="${k}">${label} ${st.sort === k ? `<span class="arr">${st.order === 'asc' ? '▲' : '▼'}</span>` : ''}</th>`;
 
   async function load() {
     setQuery('questions', { ...st, page: st.page > 1 ? st.page : '', size: st.size !== 50 ? st.size : '', sort: st.sort !== 'id' ? st.sort : '', order: st.order !== 'asc' ? st.order : '' });
     const params = new URLSearchParams(Object.entries(st).filter(([, v]) => v !== ''));
     const r = await api('/questions?' + params);
-    $main.querySelector('#tbl').innerHTML = r.rows.length ? `<table class="t">
-      <thead><tr><th><input type="checkbox" id="all"></th>${th('id')}${th('era')}${th('topic')}<th>지문</th>${th('difficulty')}<th>검수</th><th>상태</th>${th('attempts')}${th('accuracy')}${th('avg_correct_ms')}</tr></thead>
+    $main.querySelector('#tbl').innerHTML = r.rows.length ? `<table class="t qtable">
+      <thead><tr><th><input type="checkbox" id="all"></th>${th('id')}${th('era')}<th>문제</th><th>정답</th>${th('difficulty')}<th>상태</th>${th('served')}${th('accuracy')}<th>관리</th></tr></thead>
       <tbody>${r.rows.map((x) => `<tr class="click" data-id="${esc(x.id)}">
         <td onclick="event.stopPropagation()"><input type="checkbox" class="sel" value="${esc(x.id)}" ${selected.has(x.id) ? 'checked' : ''}></td>
-        <td><b>${esc(x.id)}</b></td><td>${esc(x.era)}<div class="muted" style="font-size:12px">${esc(x.period || '')}</div></td>
-        <td>${esc(x.topic || '')}<div class="muted" style="font-size:12px">${esc(x.fact_group_id || '')}</div></td>
-        <td class="q" title="${esc(x.question)}">${esc(x.question)}</td>
+        <td><b>${esc(x.id)}</b>${x.importedFrom && x.importedFrom !== x.id ? `<div class="muted" style="font-size:11px" title="가져온 파일의 원래 번호">원본 ${esc(x.importedFrom)}</div>` : ''}</td>
+        <td>${esc(x.era)}<div class="muted" style="font-size:12px">${esc(x.period || '')}</div></td>
+        <td class="qcell"><div class="qtext" title="${esc(x.question)}">${esc(x.question)}</div><div class="opts">${[1, 2, 3, 4].map((n) => `<span class="${n === x.correct_option ? 'ok' : ''}">${NUMS[n - 1]} ${esc(x['option_' + n])}</span>`).join('')}</div></td>
+        <td class="ans"><b>${NUMS[x.correct_option - 1] || ''} ${esc(x.answer)}</b></td>
         <td>${esc(x.difficulty)}${x.suggested_difficulty && x.suggested_difficulty !== x.difficulty ? ` <span class="pill orange" title="실제 정답률 기준 추천">→${x.suggested_difficulty}</span>` : ''}</td>
-        <td>${reviewPill(x.review_status)}</td><td>${statusPill(x.status)}</td>
-        <td class="num">${fmt(x.attempts)}</td><td>${x.attempts ? accBar(x.accuracy) : '<span class="muted">-</span>'}</td><td class="num">${secs(x.avg_correct_ms)}</td>
+        <td>${statusPill(x.status)}<div style="margin-top:4px">${reviewPill(x.review_status)}</div></td>
+        <td class="num"><b>${fmt(x.served)}</b>회<div class="muted" style="font-size:11px">응답 ${fmt(x.attempts)}</div></td><td>${x.attempts ? accBar(x.accuracy) : '<span class="muted">-</span>'}</td>
+        <td class="acts" onclick="event.stopPropagation()"><button class="btn sm" data-edit="${esc(x.id)}">수정</button>${x.status === 'DELETED' ? `<button class="btn sm" data-restore="${esc(x.id)}">되살리기</button>` : `<button class="btn sm danger" data-del="${esc(x.id)}">삭제</button>`}</td>
       </tr>`).join('')}</tbody></table>` : '<div class="empty">조건에 맞는 문항이 없습니다.</div>';
+    $main.querySelectorAll('[data-edit]').forEach((b) => (b.onclick = () => quickEdit(b.dataset.edit, load)));
+    $main.querySelectorAll('[data-del]').forEach((b) => (b.onclick = () => removeQuestion(r.rows.find((x) => x.id === b.dataset.del), load)));
+    $main.querySelectorAll('[data-restore]').forEach((b) => (b.onclick = async () => {
+      try { await api('/questions/' + encodeURIComponent(b.dataset.restore), { method: 'PUT', body: { status: 'INACTIVE' } }); toast('되살렸습니다 (비활성 상태 — 확인 후 출제중으로 바꾸세요)'); load(); } catch (e) { toast(e.message, true); }
+    }));
     const pages = Math.max(1, Math.ceil(r.total / st.size));
     $main.querySelector('#pager').innerHTML = `총 <b>${fmt(r.total)}</b>개 ·
       <select class="in" id="size">${[20, 50, 100, 200].map((n) => `<option ${n == st.size ? 'selected' : ''}>${n}</option>`).join('')}</select>개씩
@@ -333,8 +342,7 @@ async function viewQuestion([id], query) {
       try { await api('/questions/' + encodeURIComponent(q.id), { method: 'PUT', body: { ...read(), review_status: 'APPROVED', status: 'ACTIVE' } }); toast('검수 완료 처리했습니다'); route(); } catch (err) { toast(err.message, true); }
     });
     $main.querySelector('#del').onclick = async () => {
-      if (!confirm(`${q.id} 문항을 삭제할까요? 되돌릴 수 없습니다.`)) return;
-      try { await api('/questions/' + encodeURIComponent(q.id), { method: 'DELETE' }); toast('삭제했습니다'); location.hash = '#/questions'; } catch (err) { toast(err.message, true); }
+      return removeQuestion(q, () => { location.hash = '#/questions'; });
     };
     $main.querySelector('#reset-stats')?.addEventListener('click', async () => {
       if (!confirm('이 문항의 정답률 통계를 0부터 다시 집계할까요? (플레이 기록은 남습니다)')) return;
@@ -392,41 +400,93 @@ function statsPanel(d) {
 }
 
 // ---------- 가져오기 / 내보내기 ----------
+// ---------- 목록에서 바로 고치기 · 지우기 ----------
+async function removeQuestion(q, reload) {
+  const msg = q.served
+    ? `${q.id} 문항을 삭제할까요?\n\n이미 사용자에게 ${q.served}회 나간 문항이라, 지난 기록이 깨지지 않도록 완전히 지우지 않고 '삭제됨'으로 숨깁니다. 앞으로 출제되지 않고, 상태 필터에서 '삭제됨'을 고르면 다시 볼 수 있어요.`
+    : `${q.id} 문항을 완전히 삭제할까요? (아직 출제된 적 없음, 되돌릴 수 없음)`;
+  if (!confirm(msg)) return;
+  try {
+    const r = await api('/questions/' + encodeURIComponent(q.id), { method: 'DELETE' });
+    toast(r.soft ? '삭제됨으로 숨겼습니다 (출제 안 됨)' : '삭제했습니다'); reload();
+  } catch (e) { toast(e.message, true); }
+}
+async function quickEdit(id, reload) {
+  const q = (await api('/questions/' + encodeURIComponent(id))).question;
+  const root = document.getElementById('drawer-root');
+  const opt = (list, v, label = (x) => x) => list.map((x) => `<option value="${esc(x)}" ${x === v ? 'selected' : ''}>${esc(label(x))}</option>`).join('');
+  root.innerHTML = `<div class="drawer-back"><form class="drawer" id="qe">
+    <div class="page-head"><div class="grow"><h1 class="page" style="font-size:18px">${esc(q.id)} 고치기</h1><div class="muted">출제 ${fmt(q.served)}회 · 응답 ${fmt(q.attempts)} · 정답률 ${pct(q.accuracy)}</div></div><button type="button" class="btn sm" id="close">닫기</button></div>
+    <div class="form">
+      <label class="c2">시대 <input class="in" name="era" value="${esc(q.era)}" required></label>
+      <label class="c2">세부 시기 <input class="in" name="period" value="${esc(q.period || '')}"></label>
+      <label class="c2">키워드 <input class="in" name="topic" value="${esc(q.topic || '')}"></label>
+      <label class="c2">난이도 <select class="in" name="difficulty">${opt(META.enums.difficulties, q.difficulty)}</select></label>
+      <label class="c2">출제 상태 <select class="in" name="status">${opt(META.enums.statuses, q.status, (x) => STATUS_LABEL[x] || x)}</select></label>
+      <label class="c2">검수 <select class="in" name="review_status">${opt(META.enums.reviewStatuses, q.review_status, (x) => REVIEW[x][0])}</select></label>
+      <label class="c6">문제 <textarea class="in" name="question" rows="3" required>${esc(q.question)}</textarea></label>
+      ${[1, 2, 3, 4].map((n) => `<label class="c6 optrow"><input type="radio" name="correct_option" value="${n}" ${q.correct_option === n ? 'checked' : ''} title="정답으로 지정"> 보기 ${n} <input class="in" name="option_${n}" value="${esc(q['option_' + n])}" required></label>`).join('')}
+      <label class="c6">해설 <textarea class="in" name="explanation" rows="3">${esc(q.explanation || '')}</textarea></label>
+    </div>
+    <p class="muted" style="font-size:12px">보기 왼쪽 동그라미가 정답이에요. 정답이나 보기를 바꾸면 이미 쌓인 정답률과 맞지 않을 수 있어서, 저장 뒤 통계 초기화를 권해요 (문항 상세 화면).</p>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn primary" type="submit">저장</button><a class="btn" href="#/q/${esc(q.id)}">상세 화면에서 보기</a></div>
+  </form></div>`;
+  const close = () => (root.innerHTML = '');
+  root.querySelector('.drawer-back').onclick = (e) => { if (e.target.classList.contains('drawer-back')) close(); };
+  root.querySelector('#close').onclick = close;
+  root.querySelector('#qe').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const body = Object.fromEntries([...f.entries()]);
+    body.correct_option = Number(body.correct_option);
+    try { await api('/questions/' + encodeURIComponent(q.id), { method: 'PUT', body }); toast('저장했습니다'); close(); reload(); } catch (err) { toast(err.message, true); }
+  };
+}
+
 async function viewImport() {
-  const cols = 'id,era,period,topic,fact_group_id,source_type,exam_year,exam_round,exam_question_no,source_url,difficulty,review_status,status,question,option_1,option_2,option_3,option_4,correct_option,explanation,memo';
+  const cols = 'id,era,period,topic,question_type,concept_ids,fact_group_id,source_type,difficulty,review_status,status,question,option_1,option_2,option_3,option_4,correct_option,explanation,memo';
   $main.innerHTML = `
-    <h1 class="page">가져오기 / 내보내기</h1><p class="page-sub">문항을 한 번에 추가하거나 고칠 수 있습니다. 같은 ID가 있으면 내용이 바뀌고(upsert), ID가 없거나 새 ID면 새 문항으로 추가됩니다.</p>
+    <h1 class="page">가져오기 / 내보내기</h1>
+    <p class="page-sub">새로 만든 문제 파일(md)을 올리면 <b>내용이 같은 문제는 자동으로 빼고</b>, 새 문제만 이어지는 번호(${esc(META.nextId)}부터)로 추가합니다. 추가된 문제는 바로 <a href="#/questions">문항 관리</a> 목록에 보여요.</p>
     <div class="grid g2">
       <div class="card">
-        <h2>1. 파일 선택 (CSV · JSON · 원본 MD 형식)</h2>
-        <div class="drop" id="drop">여기로 파일을 끌어오거나 클릭해서 선택하세요<br><span class="muted" style="font-size:12px">.csv (UTF-8) · .json · .md</span></div>
+        <h2>1. 파일 선택 (md · CSV · JSON)</h2>
+        <div class="drop" id="drop">여기로 파일을 끌어오거나 클릭해서 선택하세요<br><span class="muted" style="font-size:12px">.md (### KH-0001 형식) · .csv (UTF-8) · .json</span></div>
         <input type="file" id="file" accept=".csv,.json,.md,.txt" hidden>
+        <div class="modes" id="modes">
+          <label><input type="radio" name="mode" value="add" checked> <b>새 문제 추가</b> <span class="muted">— 내용 중복은 빼고 새 번호로 추가 (새로 만든 md 는 이걸로)</span></label>
+          <label><input type="radio" name="mode" value="upsert"> <b>같은 번호 고치기</b> <span class="muted">— 내보낸 파일을 고쳐서 다시 올릴 때. 번호가 같은 문제의 내용을 바꿈</span></label>
+        </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
-          <select class="in" id="mode"><option value="upsert">같은 ID는 덮어쓰기 (upsert)</option><option value="insert-only">새 ID만 추가 (기존 문항은 건너뜀)</option></select>
           <button class="btn" id="dry" disabled>2. 미리 검사</button>
           <button class="btn primary" id="apply" disabled>3. 반영하기</button>
         </div>
         <div id="result" style="margin-top:14px"></div>
       </div>
       <div class="card">
-        <h2>내보내기</h2>
+        <h2>내보내기 — 지금 서비스 중인 최종 문항 목록</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" data-exp="csv">CSV (문항)</button>
-          <button class="btn" data-exp="stats">CSV (문항 + 정답률 통계)</button>
+          <button class="btn primary" data-exp="md">MD (최종 문항 목록)</button>
+          <button class="btn" data-exp="stats">CSV (문항 + 정답률 · 출제 횟수)</button>
+          <button class="btn" data-exp="csv">CSV (문항만)</button>
           <button class="btn" data-exp="json">JSON</button>
         </div>
-        <p class="muted" style="font-size:13px">엑셀/구글 시트에서 편집한 뒤 CSV(UTF-8)로 저장해서 다시 가져오면 됩니다. 문항 목록 화면의 "CSV 내보내기"는 현재 필터 결과만 내보냅니다.</p>
+        <p class="muted" style="font-size:13px;line-height:1.6">MD 는 원본 문제 파일과 같은 모양이라, 새 문제를 만들 때 GPT 등에 "이 목록과 겹치지 않게"라고 같이 주면 좋아요. 삭제한 문항은 빠집니다.<br>
+          엑셀에서 고치려면 CSV 로 내보내 고친 뒤, 왼쪽에서 <b>같은 번호 고치기</b>로 올리세요.</p>
+        <h2 style="margin-top:18px">중복 판단 기준</h2>
+        <p class="muted" style="font-size:13px;line-height:1.7">· <b>같은 문제</b> = 문제 글이 같고 정답 보기 글자도 같음 (띄어쓰기·문장부호·굵게 표시는 무시)<br>
+          · 시대 순서 문제는 괄호 안 4개 항목이 같으면 순서가 달라도 같은 문제<br>
+          · 파일 안의 번호(KH-0001 등)는 보지 않아요 → 새 파일이 1번부터 다시 시작해도 기존 문제를 덮어쓰지 않음<br>
+          · 문제 글은 같은데 정답이 다르면 추가는 하되 <b>확인 필요</b>로 알려 줘요</p>
         <h2 style="margin-top:18px">CSV 열 형식</h2>
         <pre class="code">${cols.split(',').join(', ')}</pre>
-        <p class="muted" style="font-size:13px;line-height:1.6">필수: era, question, option_1~4, correct_option(1~4)<br>
-          difficulty: 하/중/상 · review_status: NEEDS_REVIEW/APPROVED/REJECTED · status: ACTIVE/INACTIVE<br>
-          새 문항은 status를 비우면 ACTIVE(출제중)로 들어갑니다. 감수 전이면 INACTIVE로 넣으세요.</p>
         <a class="btn sm" id="tpl">빈 템플릿 CSV 받기</a>
       </div>
     </div>`;
-  $main.querySelectorAll('[data-exp]').forEach((b) => (b.onclick = () => exportQuestions({}, { format: b.dataset.exp === 'json' ? 'json' : 'csv', stats: b.dataset.exp === 'stats' }).catch((e) => toast(e.message, true))));
+  $main.querySelectorAll('[data-exp]').forEach((b) => (b.onclick = () => exportQuestions({}, { format: b.dataset.exp === 'stats' ? 'csv' : b.dataset.exp, stats: b.dataset.exp === 'stats' }).catch((e) => toast(e.message, true))));
   let text = '', filename = '';
   const drop = $main.querySelector('#drop'), file = $main.querySelector('#file');
+  const mode = () => $main.querySelector('input[name=mode]:checked').value;
   const pick = async (f) => {
     text = await f.text(); filename = f.name;
     drop.innerHTML = `<b>${esc(f.name)}</b> (${fmt(Math.round(f.size / 1024))}KB) 선택됨 — 다른 파일을 고르려면 클릭`;
@@ -438,21 +498,31 @@ async function viewImport() {
   drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
   drop.ondragleave = () => drop.classList.remove('over');
   drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('over'); e.dataTransfer.files[0] && pick(e.dataTransfer.files[0]); };
+  $main.querySelector('#modes').onchange = () => text && run(true);
+  const short = (t) => esc(String(t || '').slice(0, 70)) + (String(t || '').length > 70 ? '…' : '');
+  const section = (title, n, head, rows) => !n ? '' : `<details class="imp" ${n <= 20 ? 'open' : ''}><summary>${title} <b>${fmt(n)}</b>개${rows.length < n ? ` (앞 ${rows.length}개만 표시)` : ''}</summary><table class="t"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></details>`;
   async function run(dry) {
-    if (!dry && !confirm('검사 결과대로 문항을 반영할까요?')) return;
-    const mode = $main.querySelector('#mode').value;
+    const m = mode();
+    if (!dry && !confirm(m === 'add' ? '중복을 뺀 새 문제를 추가할까요?' : '같은 번호 문제의 내용을 파일대로 바꿀까요?')) return;
     try {
-      const r = await api(`/import?filename=${encodeURIComponent(filename)}&mode=${mode}${dry ? '&dryRun=1' : ''}`, { method: 'POST', body: text });
-      $main.querySelector('#result').innerHTML = `
-        <div class="alert ${r.errors.length ? 'orange' : dry ? 'blue' : 'blue'}">${dry ? '🔍 검사 결과 (아직 반영 안 됨)' : '✅ 반영 완료'} — 파싱 ${fmt(r.parsed)}개 · 새로 추가 <b>${fmt(r.created)}</b> · 수정 <b>${fmt(r.updated)}</b> · 건너뜀 ${fmt(r.skipped)} · 오류 <b>${fmt(r.errors.length)}</b></div>
-        ${r.errors.length ? `<table class="t" style="margin-top:8px"><thead><tr><th>행</th><th>ID</th><th>오류</th></tr></thead><tbody>${r.errors.slice(0, 50).map((e) => `<tr><td>${e.row}</td><td>${esc(e.id || '')}</td><td>${esc(e.errors.join(', '))}</td></tr>`).join('')}</tbody></table>` : ''}`;
+      $main.querySelector('#result').innerHTML = '<div class="muted">검사 중…</div>';
+      const r = await api(`/import?filename=${encodeURIComponent(filename)}&mode=${m}${dry ? '&dryRun=1' : ''}`, { method: 'POST', body: text });
+      const head = m === 'add'
+        ? `${dry ? '🔍 검사 결과 (아직 반영 안 됨)' : '✅ 반영 완료'} — 파일 속 문제 ${fmt(r.parsed)}개 → <b>새로 추가 ${fmt(r.created)}개</b>${!dry && r.newIds?.length ? ` (${esc(r.newIds[0])} ~ ${esc(r.newIds[1])})` : ''} · 이미 있는 문제라 뺌 ${fmt(r.dupExistingCount)} · 파일 안 중복 ${fmt(r.dupInFileCount)} · 확인 필요 ${fmt(r.similarCount)} · 오류 ${fmt(r.errors.length)}`
+        : `${dry ? '🔍 검사 결과 (아직 반영 안 됨)' : '✅ 반영 완료'} — 파일 속 문제 ${fmt(r.parsed)}개 · 새로 추가 <b>${fmt(r.created)}</b> · 수정 <b>${fmt(r.updated)}</b> · 오류 ${fmt(r.errors.length)}`;
+      $main.querySelector('#result').innerHTML = `<div class="alert ${r.errors.length || r.similarCount ? 'orange' : 'blue'}">${head}</div>
+        ${section('⚠ 확인 필요 — 문제 글은 같은데 정답이 다름', r.similarCount || 0, ['파일 번호', '문제', '새 정답', '기존 문항', '기존 정답'], (r.similar || []).map((x) => `<tr><td>${esc(x.file_id)}</td><td class="q">${short(x.question)}</td><td>${esc(x.answer)}</td><td><a href="#/q/${esc(x.id)}">${esc(x.id)}</a></td><td>${esc(x.existing_answer)}</td></tr>`))}
+        ${section('이미 있는 문제라 뺌', r.dupExistingCount || 0, ['파일 번호', '문제', '같은 기존 문항'], (r.dupExisting || []).map((x) => `<tr><td>${esc(x.file_id)}</td><td class="q">${short(x.question)}</td><td><a href="#/q/${esc(x.id)}">${esc(x.id)}</a>${x.status === 'DELETED' ? ' <span class="pill red">삭제됨</span>' : ''}</td></tr>`))}
+        ${section('파일 안에서 두 번 나와 하나만 넣음', r.dupInFileCount || 0, ['파일 번호', '문제', '먼저 나온 번호'], (r.dupInFile || []).map((x) => `<tr><td>${esc(x.file_id)}</td><td class="q">${short(x.question)}</td><td>${esc(x.same_as)}</td></tr>`))}
+        ${section('오류 (빠짐)', r.errors.length, ['행', '번호', '오류'], r.errors.slice(0, 100).map((e) => `<tr><td>${e.row}</td><td>${esc(e.id || '')}</td><td>${esc(e.errors.join(', '))}</td></tr>`))}
+        ${!dry && r.created ? `<a class="btn primary" style="margin-top:10px" href="#/questions?sort=id&order=desc">추가된 문제 보러 가기 →</a>` : ''}`;
       if (!dry) { META = await api('/meta'); toast('반영했습니다'); }
-    } catch (e) { toast(e.message, true); }
+    } catch (e) { $main.querySelector('#result').innerHTML = ''; toast(e.message, true); }
   }
   $main.querySelector('#dry').onclick = () => run(true);
   $main.querySelector('#apply').onclick = () => run(false);
   $main.querySelector('#tpl').onclick = () => {
-    const blob = new Blob(['﻿' + cols + '\r\n,조선 전기,세종,훈민정음,F-NEW,ORIGINAL,,,,,하,NEEDS_REVIEW,INACTIVE,훈민정음을 창제한 왕은?,태조,세종,성종,정조,2,세종은 1443년 훈민정음을 창제했다.,\r\n'], { type: 'text/csv' });
+    const blob = new Blob(['﻿' + cols + '\r\n,조선 전기,세종,훈민정음,개념 확인,,,ORIGINAL,하,NEEDS_REVIEW,INACTIVE,훈민정음을 창제한 왕은?,태조,세종,성종,정조,2,세종은 1443년 훈민정음을 창제했다.,\r\n'], { type: 'text/csv' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'question-template.csv'; a.click();
   };
 }

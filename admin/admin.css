@@ -184,3 +184,25 @@ table.t td { white-space: nowrap; }
 table.t td.q { white-space: nowrap; min-width: 240px; }
 .card { overflow-x: auto; }
 @media (max-width: 1100px) { .g2 { grid-template-columns: 1fr; } }
+
+/* 문항 목록: 문제 + 보기 + 정답 한눈에 */
+.qtable .qcell { max-width: 420px; }
+.qtable .qtext { font-weight: 600; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.qtable .opts { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; font-size: 12px; color: var(--ink-3); }
+.qtable .opts .ok { color: #1F7A4D; font-weight: 700; }
+.qtable .ans { max-width: 180px; color: #1F7A4D; }
+.qtable .acts { white-space: nowrap; }
+.qtable .acts .btn + .btn { margin-left: 4px; }
+.btn.danger { color: var(--red, #E5484D); }
+.modes { display: grid; gap: 8px; margin-top: 12px; font-size: 14px; }
+.modes label { display: block; padding: 10px 12px; border: 1px solid var(--line, #E3E8E5); border-radius: 10px; cursor: pointer; }
+.modes label:has(input:checked) { border-color: #47A276; background: #F1FAF4; }
+details.imp { margin-top: 10px; }
+details.imp summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.form .optrow { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 8px; }
+.qtable td.ans { white-space: normal; word-break: keep-all; min-width: 110px; max-width: 190px; line-height: 1.4; }
+.qtable td.qcell { white-space: normal; min-width: 300px; }
+.qtable .opts span { white-space: nowrap; }
+.table-wrap { overflow-x: auto; }
+.qtable td.qcell { max-width: 380px; } .qtable .acc-bar { min-width: 100px; }
+.qtable td.acts { white-space: normal; } .qtable td.acts .btn { display: block; width: 100%; margin: 0 0 4px; } .qtable td.acts .btn + .btn { margin-left: 0; } .qtable td.qcell { max-width: 340px; min-width: 260px; }

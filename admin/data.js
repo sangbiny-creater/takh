@@ -41,6 +41,7 @@ function row(q) {
     stats_since: s.statsSince ? new Date(s.statsSince).toISOString().replace('T', ' ').slice(0, 19) : null,
     updated_at: q.updatedAt ? new Date(q.updatedAt).toISOString().slice(0, 10) : '',
     tb: Array.from({ length: 10 }, (_, i) => s[`tb${i}`] || 0),
+    answer: q[`option_${q.correct_option}`] ?? '',
   };
   r.suggested_difficulty = suggest(r.accuracy, attempts);
   return r;
@@ -55,7 +56,8 @@ const FLAG = {
 function filterRows(qs) {
   const term = (qs.q || '').toLowerCase();
   return [...Qs.values()].map(row).filter((r) => {
-    if (term && ![r.id, r.question, r.topic, r.explanation, r.option_1, r.option_2, r.option_3, r.option_4].some((v) => String(v ?? '').toLowerCase().includes(term))) return false;
+    if (r.status === 'DELETED' && qs.status !== 'DELETED') return false;
+    if (term && ![r.id, r.question, r.topic, r.explanation, r.importedFrom, r.option_1, r.option_2, r.option_3, r.option_4].some((v) => String(v ?? '').toLowerCase().includes(term))) return false;
     for (const f of ['era', 'period', 'difficulty', 'review_status', 'status', 'fact_group_id', 'source_type']) if (qs[f] && r[f] !== qs[f]) return false;
     if (qs.flag && FLAG[qs.flag] && !FLAG[qs.flag](r)) return false;
     return true;
@@ -117,7 +119,7 @@ export async function api(path, opts = {}) {
 
   if (p === '/dashboard') {
     await loadAll(true);
-    const rows = [...Qs.values()].map(row);
+    const rows = [...Qs.values()].filter((q) => q.status !== 'DELETED').map(row);
     const runs = collection(fs, 'runs');
     const today = kstDayStart();
     const [todayN, weekN, finN, startN, flagN, users, recent] = await Promise.all([
@@ -265,10 +267,17 @@ export async function api(path, opts = {}) {
 export async function exportQuestions(qs = {}, { format = 'csv', stats = false } = {}) {
   await loadAll(true);
   const rows = sortRows(filterRows(qs), 'id', 'asc');
-  const FIELDS = ['id', 'era', 'period', 'topic', 'fact_group_id', 'source_type', 'exam_year', 'exam_round', 'exam_question_no', 'source_url', 'difficulty', 'review_status', 'status', 'question', 'option_1', 'option_2', 'option_3', 'option_4', 'correct_option', 'explanation', 'memo'];
+  const FIELDS = ['id', 'era', 'period', 'topic', 'question_type', 'concept_ids', 'fact_group_id', 'source_type', 'exam_year', 'exam_round', 'exam_question_no', 'source_url', 'difficulty', 'review_status', 'status', 'question', 'option_1', 'option_2', 'option_3', 'option_4', 'correct_option', 'explanation', 'memo'];
   const stamp = new Date().toISOString().slice(0, 10);
   let blob, name;
-  if (format === 'json') {
+  if (format === 'md') {
+    // 최종 문항 목록 (원본 md 와 같은 모양) — 다시 올려도 내용 중복이라 새로 생기지 않음
+    const mdF = FIELDS.filter((f) => f !== 'id');
+    const body = rows.map((r) => [`### ${r.id}`, '', ...mdF.filter((f) => r[f] != null && r[f] !== '').map((f) => `- ${f}: ${String(r[f]).replace(/\r?\n/g, ' ')}`)].join('\n')).join('\n\n');
+    const head = `# ${META.series.title || '타임어택 한국사'} — 최종 문항 목록\n\n- 내보낸 날: ${stamp}\n- 문항 수: ${rows.length}개 (삭제된 문항 제외)\n- 출제중 ${rows.filter((r) => r.status === 'ACTIVE').length}개 · 비활성 ${rows.filter((r) => r.status === 'INACTIVE').length}개\n\n## 문항 목록\n\n`;
+    blob = new Blob([head + body + '\n'], { type: 'text/markdown' });
+    name = `${META.series.id}-questions-${stamp}.md`;
+  } else if (format === 'json') {
     blob = new Blob([JSON.stringify(rows.map((r) => Object.fromEntries(FIELDS.map((f) => [f, r[f] ?? null]))), null, 2)], { type: 'application/json' });
     name = `${META.series.id}-questions-${stamp}.json`;
   } else {
