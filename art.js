@@ -1,6 +1,6 @@
 // 그림(아트) 자리 목록 — GPT 로 만든 그림을 web/assets/gpt/ 에 아래 파일 이름으로 넣으면 바로 바뀜.
 //  파일이 아직 없으면 두 번째 값(임시 그림 또는 아이콘)으로 자동 대체된다.
-//  프롬프트·크기 안내: docs/GPT_IMAGE_PROMPTS.md
+//  프롬프트: docs/GPT_IMAGE_PROMPTS.md · 원본(크로마키)은 art-src/ 에 넣고 npm run art 로 잘라서 여기로 옴
 const svgData = (svg) => 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 
 // 임시 아이콘 (GPT 아이콘이 들어오기 전까지)

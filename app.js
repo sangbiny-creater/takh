@@ -265,18 +265,20 @@ function watermarkUrl(text) {
 // ---------- 문제 화면 공통 (한 화면: 지문 · 시대 그림 · 보기 · 하단 버튼) ----------
 function quizScreenHtml({ headLeft, headCenter, headRight, era, period, question, options, progress, watermark = false, footHtml = '' }) {
   const longOpt = options.some((o) => [...o].length > 8);
+  // 문제 푸는 화면: 지문과 보기가 주인공. 그림은 시대 표시용 작은 아이콘 하나만.
   return `
     <div class="screen quiz">
       <div class="quiz-head">${headLeft}<div class="count">${headCenter}</div>${headRight}</div>
       <div class="bars"><div class="progress"><div style="width:${progress}%"></div></div><div class="timebar"><div id="tbar"></div></div></div>
-      <section class="q-top">
-        <span class="chip">${esc(era)}${period ? ' · ' + esc(period) : ''}</span>
-        ${questionHtml(question)}
-      </section>
-      <section class="stage" id="q-stage">
+      <section class="q-card" id="q-card">
         ${watermark ? `<div class="watermark" style="background-image:${watermarkUrl(store.nick)}"></div>` : ''}
-        ${eraArt(era, { cls: 'stage-art' })}
-        <div class="stage-pot" id="pot-wrap"></div>
+        <div class="q-card-in" id="q-in">
+          <div class="q-card-main">
+            <span class="chip">${esc(era)}${period ? ' · ' + esc(period) : ''}</span>
+            ${questionHtml(question)}
+          </div>
+          <div class="q-card-art">${eraArt(era)}</div>
+        </div>
       </section>
       <section class="options" id="opts">
         ${options.map((o, i) => `<button class="option ${longOpt ? 'long' : ''}" data-i="${i}">${esc(o)}</button>`).join('')}
@@ -285,7 +287,7 @@ function quizScreenHtml({ headLeft, headCenter, headRight, era, period, question
     </div>`;
 }
 
-/** 답을 낸 뒤: 보기에 정답/오답 표시 + 그림 자리에 결과·해설 (스크롤 없이) */
+/** 답을 낸 뒤: 보기에 정답/오답 표시 + 문제 카드 안에 결과·해설 (보기 크기는 그대로) */
 function showAnswer({ correctIndex, chosenIndex, isCorrect, timeout, title, sub, explanation }) {
   [...$app.querySelectorAll('.option')].forEach((b, i) => {
     b.disabled = true;
@@ -293,13 +295,13 @@ function showAnswer({ correctIndex, chosenIndex, isCorrect, timeout, title, sub,
     else if (i === chosenIndex) { b.classList.add('wrong'); b.insertAdjacentHTML('beforeend', `<span class="mark">${icon('x')}</span>`); }
     else b.classList.add('dim');
   });
-  $app.querySelector('#q-stage').innerHTML = `
-    <div class="stage-result ${isCorrect ? 'ok' : 'no'}">
-      ${art(isCorrect ? 'mascotCorrect' : timeout ? 'mascotTimeout' : 'mascotWrong', { cls: 'result-mascot' })}
-      <div class="result-body">
-        <div class="result-title">${title}</div>
-        <div class="result-sub">${sub}</div>
-        ${explanation ? `<p class="result-exp">${esc(explanation.replace(/\*\*/g, ''))}</p>` : ''}
+  $app.querySelector('#q-card').classList.add(isCorrect ? 'is-ok' : 'is-no');
+  $app.querySelector('#q-in').innerHTML = `
+    <div class="feedback ${isCorrect ? 'ok' : 'no'}">
+      ${art(isCorrect ? 'mascotCorrect' : timeout ? 'mascotTimeout' : 'mascotWrong', { cls: 'fb-mascot' })}
+      <div class="fb-body">
+        <div class="fb-head"><b class="fb-title">${title}</b><span class="fb-sub">${sub}</span></div>
+        ${explanation ? `<p class="fb-exp">${esc(explanation.replace(/\*\*/g, ''))}</p>` : ''}
       </div>
     </div>`;
 }
@@ -317,16 +319,18 @@ async function viewPlay() {
   const s = CONFIG.scoring;
   $app.innerHTML = `
     <div class="screen ready">
-      <div class="quiz-head"><a class="icon-btn back-btn" href="#/">${icon('back')}</a><div></div><div></div></div>
-      <div class="ready-art">${art('mascotBook')}</div>
-      <h2>준비됐나요?</h2>
-      <ul class="ready-rules">
-        <li><b>${CONFIG.series.questionCount}문제</b>, 문제당 <b>${s.timeLimitMs / 1000}초</b></li>
-        <li>문제가 뜨는 순간부터 점수가 줄어요 (최고 <b>${fmt(s.maxPoints)}점</b>)</li>
-        <li>틀리거나 시간이 지나면 <b>0점</b></li>
-        <li>화면을 나가도 <b>시간은 멈추지 않아요</b></li>
-      </ul>
-      <button class="btn-primary" id="go">시작!</button>
+      <div class="quiz-head"><a class="icon-btn back-btn" href="#/">${icon('back')}</a><div class="count">준비</div><div style="width:40px"></div></div>
+      <div class="ready-hero">
+        ${art('mascotBook', { cls: 'ready-mascot' })}
+        <div class="ready-title"><h2>준비됐나요?</h2><p>문제가 뜨는 순간부터 시간이 흘러요</p></div>
+      </div>
+      <div class="ready-grid">
+        <div class="rcard"><b>${CONFIG.series.questionCount}문제</b><span>시대별로 골고루</span></div>
+        <div class="rcard"><b>${s.timeLimitMs / 1000}초</b><span>문제당 제한시간</span></div>
+        <div class="rcard"><b>최고 ${fmt(s.maxPoints)}점</b><span>빨리 맞힐수록 높아요</span></div>
+        <div class="rcard warn"><b>오답 0점</b><span>나가도 시간은 흘러요</span></div>
+      </div>
+      <button class="btn-primary ready-go" id="go">시작!</button>
     </div>`;
   $app.querySelector('#go').onclick = async (e) => {
     e.target.disabled = true;
@@ -368,10 +372,9 @@ function playLoop(runId, cur) {
       headRight: `<div class="timer-chip" id="timer">${icon('clock')}<span>00:${String(Math.ceil((q.timeLimitMs - q.elapsedMs) / 1000)).padStart(2, '0')}</span></div>`,
       era: q.era, period: q.period, question: q.question, options: q.options,
       progress: ((q.seq - 1) / c.total) * 100, watermark: true,
-      footHtml: `<div class="foot-note">누적 <b>${fmt(c.scoreSoFar || 0)}</b>점</div>`,
+      footHtml: `<div class="pot-pill"><span>획득 가능 점수</span><b id="pot">${fmt(CONFIG.scoring.maxPoints)}</b><em>누적 ${fmt(c.scoreSoFar || 0)}점</em></div>`,
     });
-    $app.querySelector('#pot-wrap').innerHTML = `획득 가능<b id="pot">${fmt(CONFIG.scoring.maxPoints)}</b>`;
-    secure(true);
+        secure(true);
     $app.querySelector('#leave').onclick = leave;
 
     const $timer = $app.querySelector('#timer');
@@ -411,8 +414,8 @@ function playLoop(runId, cur) {
       $app.querySelector('.progress > div').style.width = (q.seq / c.total) * 100 + '%';
       showAnswer({
         correctIndex: r.correctIndex, chosenIndex: index, isCorrect: r.isCorrect, timeout,
-        title: r.isCorrect ? `+${fmt(r.points)}점` : timeout ? '시간 초과' : '오답',
-        sub: `${r.isCorrect ? `정답! ${sec(r.elapsedMs)}` : '0점'} · 누적 ${fmt(r.totalScore)}점`,
+        title: r.isCorrect ? `정답! +${fmt(r.points)}점` : timeout ? '시간 초과 · 0점' : '오답 · 0점',
+        sub: `${r.isCorrect ? `${sec(r.elapsedMs)} · ` : ''}누적 ${fmt(r.totalScore)}점`,
         explanation: r.explanation,
       });
       $app.querySelector('#foot').innerHTML = `<button class="btn-primary next-btn" id="next">${r.done ? '결과 보기' : '다음 문제'} ${icon('chev').replace('<svg', '<svg width="20" height="20"')}</button>`;
@@ -437,7 +440,7 @@ async function finish(runId) {
   setTabbar(true);
   $app.innerHTML = `
     <div class="screen finish">
-      <div class="finish-art">${art('crown', { cls: 'finish-crown' })}${art('mascotFinish', { cls: 'finish-mascot' })}</div>
+      <div class="finish-art">${art('mascotFinish', { cls: 'finish-mascot' })}</div>
       <div class="big">${fmt(d.totalScore)}<small>점</small></div>
       <div class="sub">정답 ${d.correctCount} / ${d.questionCount} · 총 ${sec(d.totalTimeMs)}</div>
       ${rk?.me ? `<div class="rank-note">이번 주 내 순위 ${fmt(rk.me.rank)}위 · 최고 ${fmt(rk.me.score)}점</div>` : ''}
@@ -484,7 +487,7 @@ async function viewRanking() {
     box.innerHTML = `
       <section class="podium">${art('rankingScene', { cls: 'podium-bg' })}${pod(b, 2, 'second')}${pod(a, 1, 'first')}${pod(c, 3, 'third')}</section>
       <section class="card rank-list">${r.list.length > 3 ? r.list.slice(3).map((p) => `
-        <div class="rank-row ${p.me ? 'me' : ''}"><span class="n">${p.rank}</span><span class="nm">${esc(p.nickname)}</span><span class="s">${fmt(p.score)}</span></div>`).join('') : '<div class="empty small">4위부터 여기에 표시돼요</div>'}
+        <div class="rank-row ${p.me ? 'me' : ''}"><span class="n">${p.rank}</span><span class="nm">${esc(p.nickname)}</span><span class="s">${fmt(p.score)}</span></div>`).join('') : `<div class="empty rank-empty">${art('mascotHero')}<b>4위 자리가 비어 있어요!</b><span>지금 도전해서 순위에 이름을 올려 보세요</span></div>`}
       </section>
       <p class="week-note">${esc(r.week)} · 참가 ${fmt(r.participants)}명 · 동점이면 더 빨리 푼 순</p>
       ${r.me ? `<div class="my-rank"><span>내 순위 ${fmt(r.me.rank)}위</span><b>${fmt(r.me.score)}점</b></div>` : which === 'this' ? `<a class="my-rank" href="#/play"><span>아직 이번 주 기록이 없어요</span><b>도전 →</b></a>` : ''}`;
@@ -579,7 +582,7 @@ async function learnSession(era) {
       headRight: `<span class="chip">학습</span>`,
       era: q.era, period: q.period, question: q.question, options: opts,
       progress: (i / list.length) * 100,
-      footHtml: `<div class="foot-note">맞힌 문제 <b>${correct}</b>개</div>`,
+      footHtml: `<div class="pot-pill learn"><span>학습 모드</span><b>${correct}</b><em>맞힌 문제</em></div>`,
     });
     $app.querySelector('#opts').onclick = (e) => {
       const b = e.target.closest('.option');
@@ -589,7 +592,7 @@ async function learnSession(era) {
       if (ok) correct++;
       showAnswer({
         correctIndex: q.correct_option - 1, chosenIndex: k - 1, isCorrect: ok, timeout: false,
-        title: ok ? '정답이에요!' : '아쉬워요', sub: `정답: ${esc(opts[q.correct_option - 1])}`, explanation: q.explanation,
+        title: ok ? '정답이에요!' : '아쉬워요', sub: ok ? '' : `정답: ${esc(opts[q.correct_option - 1])}`, explanation: q.explanation,
       });
       $app.querySelector('#foot').innerHTML = `<button class="btn-primary next-btn" id="next">${i + 1 < list.length ? '다음 문제' : '결과 보기'}</button>`;
       $app.querySelector('#next').onclick = () => { i++; show(); };
