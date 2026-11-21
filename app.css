@@ -791,3 +791,6 @@ body.secure #app { user-select: none; -webkit-user-select: none; }
 .home .tiles.three .tile.ccard span { font-size: calc(20.5 * var(--u)); -webkit-text-stroke: calc(.55 * var(--u)) currentColor; }
 #tabbar a { font-size: calc(20 * var(--u)); -webkit-text-stroke: calc(.5 * var(--u)) currentColor; }
 #tabbar a svg { width: calc(36 * var(--u)); height: calc(36 * var(--u)); stroke-width: 2.7; }
+/* 임시: 아래 탭이 너무 두꺼움 → 선과 글자를 얇게 (GPT 아이콘이 오면 그림으로 바꿈) */
+#tabbar a { font-size: calc(17 * var(--u)); -webkit-text-stroke: 0; }
+#tabbar a svg { width: calc(30 * var(--u)); height: calc(30 * var(--u)); stroke-width: 2; }
