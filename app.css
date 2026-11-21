@@ -794,3 +794,16 @@ body.secure #app { user-select: none; -webkit-user-select: none; }
 /* 임시: 아래 탭이 너무 두꺼움 → 선과 글자를 얇게 (GPT 아이콘이 오면 그림으로 바꿈) */
 #tabbar a { font-size: calc(17 * var(--u)); -webkit-text-stroke: 0; }
 #tabbar a svg { width: calc(30 * var(--u)); height: calc(30 * var(--u)); stroke-width: 2; }
+/* GPT 아이콘 (docs/GPT_ICON_PROMPTS.md): 아래 탭은 안 눌림/눌림 그림 두 벌을 바꿔 보여 줌 */
+#tabbar a .tab-ic { position: relative; display: block; width: calc(30 * var(--u)); height: calc(30 * var(--u)); }
+#tabbar a .tab-ic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+#tabbar a .tab-ic .on { opacity: 0; }
+#tabbar a.on .tab-ic .on { opacity: 1; }
+#tabbar a.on .tab-ic .off { opacity: 0; }
+#tabbar a { font-size: calc(17 * var(--u)); gap: calc(3 * var(--u)); }
+/* 메뉴 3개: 세 그림이 같은 비율로 잘려 있으니 같은 정사각형 칸에 넣음 */
+.home .tiles.three .tile.ccard .tile-ico { top: calc(4 * var(--u)); width: calc(62 * var(--u)); height: calc(62 * var(--u)); }
+.home .tiles.three .tile.ccard span { top: calc(65 * var(--u)); }
+#tabbar a .tab-ic { width: calc(36 * var(--u)); height: calc(36 * var(--u)); }
+#tabbar a { font-size: calc(19 * var(--u)); -webkit-text-stroke: calc(.3 * var(--u)) currentColor; gap: calc(1 * var(--u)); }
+.home .tiles.three .tile.ccard span { top: calc(63 * var(--u)); }
