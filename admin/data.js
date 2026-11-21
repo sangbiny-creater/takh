@@ -254,7 +254,7 @@ export async function api(path, opts = {}) {
   }
 
   if (p === '/settings' && method === 'GET') {
-    return { only_approved: '0', daily_play_limit: '0', avoid_recent_days: '14', ...((await getDoc(doc(fs, 'settings', 'game'))).data() || {}) };
+    return { only_approved: '0', daily_play_limit: '5', avoid_recent_days: '14', ...((await getDoc(doc(fs, 'settings', 'game'))).data() || {}) };
   }
   if (p === '/settings' && method === 'PUT') return call('adminSetSettings', opts.body);
 
