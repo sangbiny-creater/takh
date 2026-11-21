@@ -535,7 +535,7 @@ async function runDrawer(id, reload) {
       <button class="btn ${r.disqualified ? '' : 'danger'}" id="dq">${r.disqualified ? '실격 해제' : '이 판 실격 처리'}</button>
       <button class="btn danger" id="block">사용자 차단 (랭킹 제외)</button>
     </div>
-    <table class="t"><thead><tr><th>#</th><th>문항</th><th>결과</th><th class="num">소요</th><th class="num">보호시간</th><th class="num">점수</th></tr></thead><tbody>
+    <table class="t"><thead><tr><th>#</th><th>문항</th><th>결과</th><th class="num">소요</th><th class="num">허용시간</th><th class="num">점수</th></tr></thead><tbody>
     ${d.questions.map((x) => `<tr><td>${x.seq}</td><td class="q" style="max-width:240px"><a href="#/q/${esc(x.question_id)}">${esc(x.question_id)}</a> ${esc(x.question)}</td>
       <td>${x.status === 'TIMEOUT' ? '<span class="pill gray">시간초과</span>' : x.is_correct ? '<span class="pill green">정답</span>' : '<span class="pill red">오답</span>'}${x.too_fast ? ' <span class="pill orange">너무 빠름</span>' : ''}${x.focus_lost ? ` <span class="pill gray">이탈 ${x.focus_lost}</span>` : ''}</td>
       <td class="num">${secs(x.elapsed_ms)}</td><td class="num">${secs(x.read_window_ms)}</td><td class="num"><b>${fmt(x.points)}</b></td></tr>`).join('')}
@@ -585,7 +585,7 @@ async function viewSettings() {
           <tr><td>문항당 최고점 / 정답 최저점</td><td class="num">${sc.maxPoints} / ${sc.minCorrectPoints}</td></tr>
           <tr><td>오답 / 시간초과</td><td class="num">${sc.wrongPoints} / ${sc.timeoutPoints}</td></tr>
           <tr><td>문항당 제한시간</td><td class="num">${sc.timeLimitMs / 1000}초</td></tr>
-          <tr><td>읽기 보호 시간</td><td class="num">${sc.readBaseMs / 1000}초 + 글자당 ${sc.readPerCharMs}ms (${sc.readMinMs / 1000}~${sc.readMaxMs / 1000}초)</td></tr>
+          <tr><td>감점 시작 전 허용 시간 (네트워크 지연분)</td><td class="num">${sc.readMaxMs / 1000}초</td></tr>
           <tr><td>감점 곡선 지수</td><td class="num">${sc.decayExponent}</td></tr>
           <tr><td>너무 빠른 답 기준 / 의심 판 기준</td><td class="num">${sc.tooFastMs}ms / ${sc.tooFastFlagCount}개</td></tr>
         </tbody></table>

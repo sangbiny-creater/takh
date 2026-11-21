@@ -152,8 +152,8 @@ function showRules() {
     <p>한 판 <b>${CONFIG.series.questionCount}문제</b>, 문제당 최고 <b>${fmt(s.maxPoints)}점</b>이에요.</p>
     <table>
       <tr><th>결과</th><th>점수</th></tr>
-      <tr><td>읽기 시간(약 3초) 안에 정답</td><td><b>${fmt(s.maxPoints)}</b></td></tr>
-      <tr><td>그 뒤 ${s.timeLimitMs / 1000}초까지 정답</td><td>${fmt(s.maxPoints)} → ${s.minCorrectPoints}</td></tr>
+      <tr><td>바로(${s.readMaxMs / 1000}초 안에) 정답</td><td><b>${fmt(s.maxPoints)}</b></td></tr>
+      <tr><td>${s.timeLimitMs / 1000}초까지 정답 (문제가 뜨는 순간부터 감소)</td><td>${fmt(s.maxPoints)} → ${s.minCorrectPoints}</td></tr>
       <tr><td>오답</td><td>${s.wrongPoints}</td></tr>
       <tr><td>시간 초과 (${s.timeLimitMs / 1000}초)</td><td>${s.timeoutPoints}</td></tr>
     </table>
