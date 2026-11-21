@@ -16,9 +16,10 @@
   <div id="stage">
     <main id="app" aria-live="polite"></main>
     <nav id="tabbar" hidden>
-      <a href="#/ranking" data-tab="ranking"><img class="tab-ico" src="assets/gpt/icon_trophy.png" alt=""><span>주간 랭킹</span></a>
-      <a href="#/" data-tab="home" class="center"><i data-icon="play"></i><span>문제 풀기</span></a>
-      <a href="#/results" data-tab="results"><img class="tab-ico" src="assets/gpt/icon_chart.png" alt=""><span>내 결과</span></a>
+      <a href="#/" data-tab="home"><img class="tab-ico" src="assets/gpt/ui_logo.png" alt=""><span>홈</span></a>
+      <a href="#/ranking" data-tab="ranking"><img class="tab-ico" src="assets/gpt/icon_trophy.png" alt=""><span>랭킹</span></a>
+      <a href="#/results" data-tab="results"><img class="tab-ico" src="assets/gpt/icon_chart.png" alt=""><span>결과</span></a>
+      <a href="#/wrong" data-tab="wrong"><img class="tab-ico" src="assets/gpt/icon_star.png" alt=""><span>오답</span></a>
     </nav>
   </div>
   <div id="shield" hidden>
@@ -31,6 +32,8 @@
   </div>
   <div id="modal-root"></div>
   <div id="toast" role="status"></div>
+  <script src="lib/ads_config.js"></script>
+  <script src="lib/native.js"></script>
   <script src="app.js" type="module"></script>
 </body>
 </html>

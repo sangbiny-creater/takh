@@ -8,3 +8,7 @@ export const FIREBASE_CONFIG = {
   messagingSenderId: '364166425986',
   appId: '1:364166425986:web:225d7635b0149084d3739b',
 };
+
+// 카카오 로그인: Firebase 콘솔 → Authentication → 로그인 방법 → 'OpenID Connect' 제공업체(이름 kakao)를 만든 뒤 'oidc.kakao' 로 바꾸기.
+//  null 이면 카카오 버튼을 '준비 중'으로 보여 줌. 설정 방법: DEPLOY.md '카카오 로그인'
+export const KAKAO_PROVIDER_ID = null;
