@@ -752,3 +752,42 @@ body.secure #app { user-select: none; -webkit-user-select: none; }
 .rcard { grid-template-columns: clamp(42px, 6.2dvh, 58px) minmax(0, 1fr); }
 .ck { min-height: clamp(50px, 7.4dvh, 66px); }
 .ready .start, .terms .btn-primary.big { height: clamp(58px, 8.6dvh, 74px); font-size: clamp(22px, 3.4dvh, 28px); }
+
+/* ===== 3차 (2026-11-21): 홈 메뉴 3개 + 아래 탭 4개를 시안 1과 같은 비율로 =====
+   시안(852×1846)은 휴대폰(390×844)과 비율이 같아서, 시안 크기를 390 기준 px로 옮기고 --u 로 화면에 맞춰 늘이고 줄임 */
+:root { --u: min(0.2564vw, 0.1185dvh, 1.18px); --tab-h: calc(83 * var(--u) + env(safe-area-inset-bottom)); }
+@media (min-width: 520px) and (min-height: 760px) { :root { --u: min(1.18px, calc(var(--stage-h) / 844)); } }
+
+/* 메뉴 3개: 칸 121×98, 아이콘 약 56×52, 글자 17px 굵게 */
+.home .tiles.three { margin: 12px -8px 0; gap: calc(6.5 * var(--u)); }
+.home .tiles.three .tile.ccard { position: relative; display: block; height: calc(98 * var(--u)); padding: 0; border-radius: calc(18 * var(--u)); background: linear-gradient(180deg, #FFFFFB 0%, #FFFCF2 100%); border: calc(1.6 * var(--u)) solid #CBE2CE; box-shadow: 0 calc(2.5 * var(--u)) 0 #CFE3D1; font-size: 0; }
+.home .tiles.three .tile.ccard .tile-ico { position: absolute; left: 50%; top: calc(7 * var(--u)); transform: translateX(-50%); width: calc(60 * var(--u)); height: calc(52 * var(--u)); object-fit: contain; }
+.home .tiles.three .tile.ccard span { position: absolute; left: 0; right: 0; top: calc(64 * var(--u)); text-align: center; font-size: calc(17 * var(--u)); line-height: 1.2; font-weight: 900; letter-spacing: -.3px; color: #1F2A24; white-space: nowrap; }
+
+/* 아래 탭 4개: 바 374×77, 지금 탭 초록 82×62, 아이콘 약 28px, 글자 16px, 칸 사이 세로 줄 */
+#tabbar { left: 50%; transform: translateX(-50%); bottom: calc(6 * var(--u) + env(safe-area-inset-bottom)); width: calc(100% - 16 * var(--u)); max-width: 444px; height: calc(77 * var(--u)); padding: calc(7 * var(--u)) calc(4 * var(--u)); gap: 0; border-radius: calc(24 * var(--u)); background: #FFFDF6; border: calc(1.6 * var(--u)) solid #CFE4D2; box-shadow: 0 calc(3 * var(--u)) 0 #D5E7D7, 0 6px 18px rgba(46, 125, 91, .10); }
+@media (min-width: 520px) and (min-height: 760px) { #tabbar { bottom: calc((100dvh - var(--stage-h)) / 2 + 6 * var(--u)); } }
+#tabbar a { position: relative; height: 100%; margin: 0 calc(4 * var(--u)); border-radius: calc(16 * var(--u)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(3 * var(--u)); color: #1F3A2B; font-size: calc(16 * var(--u)); font-weight: 900; letter-spacing: -.3px; }
+#tabbar a + a::before { content: ''; position: absolute; left: calc(-4.5 * var(--u)); top: 50%; height: calc(46 * var(--u)); transform: translateY(-50%); width: 1px; background: #DCE8DD; }
+#tabbar a.on::before, #tabbar a.on + a::before { display: none; }
+#tabbar a svg { width: calc(29 * var(--u)); height: calc(29 * var(--u)); }
+#tabbar a.on { background: linear-gradient(180deg, #2E8E60 0%, #1F6E48 100%); color: #fff; box-shadow: 0 calc(3 * var(--u)) 0 #155036; }
+#tabbar a.on svg { fill: currentColor; }
+#tabbar a.on svg [d^="M2.8"] { fill-rule: evenodd; }
+
+/* 로그인: 캐릭터 그림 아래 투명 여백(약 6%)만큼 내려서 덤불에 딱 붙임 */
+.login-mascot { transform: translateY(6%); }
+
+#tabbar a i { display: block; line-height: 0; }
+/* 시안 글꼴: 둥글고 굵은 Jua — 홈 메뉴 3개 · 아래 탭 4개 */
+.home .tiles.three .tile.ccard { border: calc(2.4 * var(--u)) solid #8CC79A; box-shadow: 0 calc(3 * var(--u)) 0 #B7DCBF; border-radius: calc(20 * var(--u)); }
+.home .tiles.three .tile.ccard .tile-ico { top: calc(6 * var(--u)); width: calc(68 * var(--u)); height: calc(56 * var(--u)); }
+.home .tiles.three .tile.ccard span { top: calc(63 * var(--u)); font-family: 'Jua', sans-serif; font-weight: 400; font-size: calc(19.5 * var(--u)); letter-spacing: -.2px; color: #1C2B22; }
+#tabbar { border: calc(1.8 * var(--u)) solid #DCEBDD; }
+#tabbar a { font-family: 'Jua', sans-serif; font-weight: 400; font-size: calc(18 * var(--u)); color: #1C2B22; gap: calc(2 * var(--u)); }
+#tabbar a svg { width: calc(33 * var(--u)); height: calc(33 * var(--u)); stroke-width: 2.6; }
+#tabbar a.on { background: linear-gradient(180deg, #2F8A5C 0%, #237A4F 100%); box-shadow: inset 0 2px 0 rgba(255,255,255,.18), 0 calc(2 * var(--u)) 0 #185C3B; }
+.home .tiles.three .tile.ccard { border-width: calc(2.8 * var(--u)); border-color: #7FBD8E; }
+.home .tiles.three .tile.ccard span { font-size: calc(20.5 * var(--u)); -webkit-text-stroke: calc(.55 * var(--u)) currentColor; }
+#tabbar a { font-size: calc(20 * var(--u)); -webkit-text-stroke: calc(.5 * var(--u)) currentColor; }
+#tabbar a svg { width: calc(36 * var(--u)); height: calc(36 * var(--u)); stroke-width: 2.7; }
