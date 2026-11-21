@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#F0F7F2" />
+  <title>타임어택 한국사</title>
+  <link rel="icon" href="assets/crown.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div id="stage">
+    <main id="app" aria-live="polite"></main>
+    <nav id="tabbar" hidden>
+      <a href="#/ranking" data-tab="ranking"><i data-icon="trophy"></i><span>주간 랭킹</span></a>
+      <a href="#/" data-tab="home" class="center"><i data-icon="book"></i><span>문제 풀기</span></a>
+      <a href="#/results" data-tab="results"><i data-icon="bars"></i><span>내 결과</span></a>
+    </nav>
+  </div>
+  <div id="shield" hidden>
+    <div class="shield-inner">
+      <div class="shield-icon">⏱</div>
+      <strong>화면이 가려졌어요</strong>
+      <p>문제를 푸는 동안 화면을 벗어나면 문제를 가립니다.<br />시간은 계속 흐르고 있어요!</p>
+      <button type="button" class="btn-primary" id="shield-back">문제로 돌아가기</button>
+    </div>
+  </div>
+  <div id="modal-root"></div>
+  <div id="toast" role="status"></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
