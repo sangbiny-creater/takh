@@ -295,13 +295,14 @@ function viewTerms() {
 
 function viewNickname() {
   $app.innerHTML = `
-    <div class="screen nickname">
+    <div class="screen form-screen nickname-old">
       ${hdr('닉네임 만들기')}
-      <section class="talk-scene scene center">${art('mascotCorrect', { cls: 'talk-mascot big' })}</section>
-      <div class="pill-bubble">${UI.sparkL}랭킹에 보일 이름을 정해 주세요${UI.spark}</div>
-      <label class="input-row"><i>${UI.pencil}</i><input id="nick" maxlength="10" placeholder="한글/영문/숫자 2~10자" autocomplete="off" /></label>
-      <div class="err" id="err"></div>
-      <button class="btn-primary big" id="go">시작하기</button>
+      <div class="terms-hero">${art('mascotHero', { cls: 'terms-mascot' })}<p>랭킹에 보일 이름을 정해 주세요.<br>같은 이름은 하나만 쓸 수 있어요.</p></div>
+      <div class="form-card card">
+        <input id="nick" maxlength="10" placeholder="한글/영문/숫자 2~10자" autocomplete="off" />
+        <div class="err" id="err"></div>
+        <button class="btn-primary" id="go">시작하기</button>
+      </div>
     </div>`;
   const input = $app.querySelector('#nick');
   const go = async () => {
@@ -480,13 +481,13 @@ async function viewHome() {
   $app.innerHTML = `
     <div class="screen home">
       <header class="hdr hdr-home"><h1 class="hdr-brand">${art('logo', { cls: 'brand-logo' })}<span>${esc(CONFIG.series.shortTitle)}</span></h1><a class="hdr-gear" href="#/settings" aria-label="설정">${icon('gear')}</a></header>
-      <section class="home-hero scene">
-        <h2 class="greet"><span class="hl">${esc(store.nick)}</span>님,${UI.spark}<br>오늘도 한국사 도전!</h2>
-        <div class="rank-pill" id="week-badge">${art('crown', { cls: 'pill-crown' })}<span>이번 주 기록에 도전!</span></div>
-        <div class="hero-stage">
-          ${eraArt('조선 전기', { cls: 'home-palace' })}
-          ${art('mascotHero', { cls: 'home-mascot' })}
+      <section class="hero">
+        <div class="hero-text">
+          <h2><span class="hl">${esc(store.nick)}</span>님,${UI.spark}<br>오늘도 한국사 도전!</h2>
+          <div class="rank-pill" id="week-badge">${art('crown', { cls: 'pill-crown' })}<span>이번 주 기록에 도전!</span></div>
         </div>
+        ${art('homeScene', { cls: 'hero-scene' })}
+        ${art('mascotHero', { cls: 'hero-mascot' })}
       </section>
       <button class="btn-primary play-btn" id="play"><span class="play-tri">${icon('play')}</span>문제 풀기${UI.spark}</button>
       <p class="play-sub">${CONFIG.series.questionCount}문제 · 문제당 ${CONFIG.scoring.timeLimitMs / 1000}초 · <a href="#" id="rules">점수 규칙</a><span id="left"></span></p>
@@ -732,7 +733,7 @@ function playLoop(runId, cur) {
 function finish(runId, tally) {
   if (CONFIG.me) CONFIG.me.currentRunId = null;
   secure(false); bannerAd(false);
-  setTabbar(false);
+  setTabbar(true); $tabbar.querySelectorAll('a').forEach((a) => a.classList.remove('on'));
   const score = tally.score, correct = tally.correct;
   $app.innerHTML = finishHtml(runId, score, correct);
   const adBtn = $app.querySelector('#adretry');
