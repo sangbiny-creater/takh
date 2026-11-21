@@ -722,3 +722,33 @@ body.secure #app { user-select: none; -webkit-user-select: none; }
 .ready .talk-scene .talk-mascot { max-width: 66%; }
 .ready .ready-talk { bottom: calc(4px + min(100% - 16px, 340px) * .32); width: 52%; }
 .nickname-old .terms-mascot { max-height: 300px; }
+
+/* 상반신 캐릭터(mascot_talk_*): 아래가 잘린 그림이라 장면 바닥에 딱 붙이고, 아래 카드가 살짝 덮음 */
+.talk-scene .talk-mascot.bust { top: auto; bottom: 0; left: 3%; height: 94%; max-height: 330px; width: auto; max-width: 60%; object-fit: contain; object-position: left bottom; }
+.terms .talk-scene .bubble { bottom: auto; top: max(12%, calc(100% - 330px * .94 + 10px)); right: 14px; max-width: 46%; }
+.ready .talk-scene .talk-mascot.bust { max-width: 56%; }
+.ready .ready-talk { bottom: auto; top: max(10%, calc(100% - 330px * .94)); right: 12px; width: 50%; }
+.nick-scene { min-height: 160px; }
+.talk-scene .talk-mascot.bust.center { left: 50%; transform: translateX(-50%); max-width: 70%; object-position: center bottom; }
+.nickname .pill-bubble { margin: -22px 0 6px; }
+.nick-note { flex: none; margin: 0 0 10px; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.nickname .btn-primary.big { margin-top: 2px; margin-bottom: 6px; }
+/* 크기를 장면 높이·너비에 맞춰 계산 (그림 비율 666:768) → 말풍선을 캐릭터 머리 옆에 정확히 붙임 */
+.talk-scene { container-type: size; --mw: min(66cqw, 96cqh * .867, 300px); --mh: calc(var(--mw) * 1.153); }
+.talk-scene .talk-mascot.bust { height: auto; max-height: none; width: var(--mw); max-width: none; left: 2%; }
+.terms .talk-scene .bubble { top: auto; bottom: calc(var(--mh) * .5); right: 12px; max-width: 44%; }
+.ready .talk-scene { --mw: min(60cqw, 96cqh * .867, 290px); }
+.ready .ready-talk { top: auto; bottom: calc(var(--mh) * .42); right: 10px; width: 48%; }
+.nick-scene { --mw: min(72cqw, 98cqh * .867, 300px); }
+.talk-scene .talk-mascot.bust.center { left: 50%; }
+.terms .talk-scene { --mw: min(70cqw, 96cqh * .867, 330px); }
+.ck span { white-space: nowrap; font-size: clamp(14px, 4.2vw, 16px); letter-spacing: -.3px; }
+.ready .talk-scene .talk-mascot.bust { max-width: none; }
+.ready .talk-scene { --mw: min(62cqw, 96cqh * .867, 310px); }
+.rcard { min-height: clamp(74px, 12dvh, 116px); }
+.rcard b { font-size: clamp(17px, 2.9dvh, 24px); }
+.rcard span { font-size: clamp(12px, 1.6dvh, 14px); }
+.rc-ico, .rc-ico svg { width: clamp(40px, 6dvh, 56px); height: clamp(40px, 6dvh, 56px); }
+.rcard { grid-template-columns: clamp(42px, 6.2dvh, 58px) minmax(0, 1fr); }
+.ck { min-height: clamp(50px, 7.4dvh, 66px); }
+.ready .start, .terms .btn-primary.big { height: clamp(58px, 8.6dvh, 74px); font-size: clamp(22px, 3.4dvh, 28px); }

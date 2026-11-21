@@ -270,7 +270,7 @@ function viewTerms() {
   $app.innerHTML = `
     <div class="screen terms">
       ${hdr('약관 동의', { back: '#/login' })}
-      <section class="talk-scene scene">${art('mascotHero', { cls: 'talk-mascot' })}<div class="bubble">시작하기 전에<br>아래 내용에<br>동의해 주세요</div></section>
+      <section class="talk-scene scene">${art('talkTerms', { cls: 'talk-mascot bust' })}<div class="bubble">시작하기 전에<br>아래 내용에<br>동의해 주세요</div></section>
       <div class="ccard ck-list">
         <label class="ck"><input type="checkbox" id="ck1"><span><b>[필수]</b> 개인정보 수집·이용 동의</span><button class="see" id="more1">보기 ›</button></label>
         <pre class="collect" id="collect" hidden>${esc(COLLECT)}</pre>
@@ -295,14 +295,14 @@ function viewTerms() {
 
 function viewNickname() {
   $app.innerHTML = `
-    <div class="screen form-screen nickname-old">
+    <div class="screen nickname">
       ${hdr('닉네임 만들기')}
-      <div class="terms-hero">${art('mascotHero', { cls: 'terms-mascot' })}<p>랭킹에 보일 이름을 정해 주세요.<br>같은 이름은 하나만 쓸 수 있어요.</p></div>
-      <div class="form-card card">
-        <input id="nick" maxlength="10" placeholder="한글/영문/숫자 2~10자" autocomplete="off" />
-        <div class="err" id="err"></div>
-        <button class="btn-primary" id="go">시작하기</button>
-      </div>
+      <section class="talk-scene scene nick-scene">${art('talkNick', { cls: 'talk-mascot bust center' })}</section>
+      <div class="pill-bubble">${UI.sparkL}랭킹에 보일 이름을 정해 주세요${UI.spark}</div>
+      <p class="nick-note">같은 이름은 하나만 쓸 수 있어요</p>
+      <label class="input-row"><i>${UI.pencil}</i><input id="nick" maxlength="10" placeholder="한글/영문/숫자 2~10자" autocomplete="off" /></label>
+      <div class="err" id="err"></div>
+      <button class="btn-primary big" id="go">시작하기</button>
     </div>`;
   const input = $app.querySelector('#nick');
   const go = async () => {
@@ -587,7 +587,7 @@ function readyHtml() {
   return `
     <div class="screen ready">
       ${hdr('준비', { back: '#/' })}
-      <section class="talk-scene scene">${art('mascotBook', { cls: 'talk-mascot' })}<div class="ready-talk"><h2>${UI.sparkL}준비됐나요?</h2><div class="bubble small">문제가 뜨는 순간부터<br>시간이 흘러요</div></div></section>
+      <section class="talk-scene scene">${art('talkReady', { cls: 'talk-mascot bust' })}<div class="ready-talk"><h2>${UI.sparkL}준비됐나요?</h2><div class="bubble small">문제가 뜨는 순간부터<br>시간이 흘러요</div></div></section>
       <div class="ready-grid">
         <div class="rcard">${art('iconLearn', { cls: 'rc-ico' })}<div><b><mark>${CONFIG.series.questionCount}문제</mark></b><span>시대별로 골고루</span></div></div>
         <div class="rcard"><i class="rc-ico">${UI.stopwatch}</i><div><b><mark>${s.timeLimitMs / 1000}초</mark></b><span>문제당 제한시간</span></div></div>
