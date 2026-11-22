@@ -1,4 +1,4 @@
-import { api, loadMeta, exportQuestions } from './data.js';
+import { api, loadMeta, exportQuestions, pendingCounts } from './data.js';
 import { adminUser, signInAdmin, signOutAll } from '../firebase.js';
 // 타임어택 백오피스 SPA
 const $main = document.getElementById('main');
@@ -74,7 +74,7 @@ async function boot() {
   route();
 }
 
-const ROUTES = { dashboard: viewDashboard, questions: viewQuestions, q: viewQuestion, import: viewImport, stats: viewStats, runs: viewRuns, ranking: viewRanking, settings: viewSettings };
+const ROUTES = { submissions: viewSubmissions, reports: viewReports, dashboard: viewDashboard, questions: viewQuestions, q: viewQuestion, import: viewImport, stats: viewStats, runs: viewRuns, ranking: viewRanking, settings: viewSettings };
 async function route() {
   if (!META) return;
   const { parts, query } = parseHash();
@@ -82,6 +82,14 @@ async function route() {
   document.querySelectorAll('#side nav a').forEach((a) => a.classList.toggle('on', a.dataset.r === (name === 'q' ? 'questions' : name)));
   document.getElementById('drawer-root').innerHTML = '';
   try { await ROUTES[name](parts.slice(1), query); } catch (e) { $main.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+  refreshBadges();
+}
+async function refreshBadges() {
+  try {
+    const c = await pendingCounts();
+    document.getElementById('nb-sub').textContent = c.submissions || '';
+    document.getElementById('nb-rep').textContent = c.reports || '';
+  } catch { /* 배지는 못 읽어도 됨 */ }
 }
 window.addEventListener('hashchange', route);
 
@@ -400,6 +408,82 @@ function statsPanel(d) {
 }
 
 // ---------- 가져오기 / 내보내기 ----------
+// ---------- 사용자가 낸 문제 ----------
+const SUB_ST = { PENDING: ['검토 대기', 'orange'], ADOPTED: ['채택', 'green'], REJECTED: ['미채택', 'gray'] };
+function adoptMail(r) {
+  const subject = '[타임어택 한국사] 보내 주신 문제가 채택되었어요!';
+  const body = `${r.nickname || ''}님, 안녕하세요. 타임어택 한국사입니다.\n\n보내 주신 문제가 채택되어 곧 게임에 나올 예정이에요. 좋은 문제를 만들어 주셔서 고맙습니다!\n\n[채택된 문제]\n${r.data.question}\n① ${r.data.option_1}\n② ${r.data.option_2}\n③ ${r.data.option_3}\n④ ${r.data.option_4}\n정답: ${'①②③④'[r.data.correct_option - 1]} ${r.data['option_' + r.data.correct_option]}\n\n앞으로도 재미있는 문제 기다릴게요.\n타임어택 한국사 드림\nhttps://takh.brown-crab.com`;
+  return `mailto:${encodeURIComponent(r.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+async function viewSubmissions(_p, query) {
+  const status = query.status ?? 'PENDING';
+  const d = await api('/submissions' + (status ? '?status=' + status : ''));
+  const tab = (k, l) => `<a class="btn sm ${status === k ? 'primary' : ''}" href="#/submissions?status=${k}">${l} ${d.counts[k] || (k ? 0 : '')}</a>`;
+  const all = Object.values(d.counts).reduce((a, b) => a + b, 0);
+  $main.innerHTML = `
+    <div class="page-head"><div class="grow"><h1 class="page">사용자 문제</h1><p class="page-sub">사용자가 '문제내기'로 보낸 문제예요. 채택하면 문항 목록에 <b>비활성 · 검수 필요</b> 상태로 들어가니, 확인 뒤 출제중으로 바꾸세요.</p></div></div>
+    <div style="display:flex;gap:6px;margin-bottom:12px">${tab('PENDING', '검토 대기')}${tab('ADOPTED', '채택')}${tab('REJECTED', '미채택')}<a class="btn sm ${status === '' ? 'primary' : ''}" href="#/submissions?status=">전체 ${all}</a></div>
+    ${d.rows.length ? d.rows.map((r) => `<div class="card sub-card" data-id="${esc(r.id)}">
+      <div class="sub-head"><span class="pill ${SUB_ST[r.status]?.[1]}">${SUB_ST[r.status]?.[0]}</span><b>${esc(r.nickname || '(닉네임 없음)')}</b>
+        <span class="muted">${r.email ? `<a href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : '이메일 없음'}${r.authEmail && r.authEmail !== r.email ? ` · 로그인 ${esc(r.authEmail)}` : ''} · ${esc(r.provider || '')}</span>
+        <span class="muted" style="margin-left:auto">${dt(r.createdAt)}</span></div>
+      <div class="sub-q"><span class="pill gray">${esc(r.data.era || '시대 미정')}</span> ${esc(r.data.question)}</div>
+      <ol class="sub-opts">${[1, 2, 3, 4].map((n) => `<li class="${n === r.data.correct_option ? 'ok' : ''}">${esc(r.data['option_' + n])}${n === r.data.correct_option ? ' ✔' : ''}</li>`).join('')}</ol>
+      ${r.data.explanation ? `<div class="sub-exp">해설: ${esc(r.data.explanation)}</div>` : ''}
+      <div class="sub-acts">
+        ${r.status === 'PENDING' ? `<select class="in era-pick">${['', ...META.series.eraOrder].map((e) => `<option ${e === (r.data.era || '') ? 'selected' : ''} value="${esc(e)}">${e || '시대 선택'}</option>`).join('')}</select><button class="btn primary sm" data-act="adopt">채택 (문항으로 추가)</button><button class="btn sm" data-act="reject">미채택</button>` : ''}
+        ${r.status === 'ADOPTED' ? `<a class="btn sm" href="#/q/${esc(r.questionId)}">문항 ${esc(r.questionId)} 보기</a>${r.email ? `<a class="btn ${r.mailedAt ? '' : 'primary'} sm" data-mail href="${adoptMail(r)}">${r.mailedAt ? `채택 메일 다시 보내기 (보냄 ${dt(r.mailedAt)})` : '채택 메일 보내기'}</a>` : '<span class="muted">이메일이 없어 메일을 보낼 수 없어요</span>'}` : ''}
+        ${r.status === 'REJECTED' ? `<button class="btn sm" data-act="reopen">다시 검토</button>` : ''}
+      </div></div>`).join('') : '<div class="empty">해당하는 문제가 없습니다.</div>'}`;
+  $main.querySelectorAll('.sub-card').forEach((c) => {
+    const id = c.dataset.id;
+    c.querySelectorAll('[data-act]').forEach((b) => (b.onclick = async () => {
+      const act = b.dataset.act, era = c.querySelector('.era-pick')?.value;
+      if (act === 'adopt' && !era) { toast('시대를 먼저 골라 주세요', true); return; }
+      try {
+        const r = await api('/submissions/' + id, { method: 'POST', body: { action: act, data: act === 'adopt' ? { era } : undefined } });
+        toast(act === 'adopt' ? `채택했습니다 → ${r.questionId} (비활성). 채택 메일을 보내 주세요` : '변경했습니다'); route();
+      } catch (e) { toast(e.message, true); }
+    }));
+    const mail = c.querySelector('[data-mail]');
+    if (mail) mail.addEventListener('click', () => { setTimeout(async () => { try { await api('/submissions/' + id, { method: 'POST', body: { action: 'mailed' } }); route(); } catch { /* 표시만 */ } }, 600); });
+  });
+}
+
+// ---------- 정정 요청 ----------
+const REP_ST = { OPEN: ['확인 필요', 'orange'], DONE: ['처리 완료', 'green'], REJECTED: ['문제 없음', 'gray'] };
+const REP_REASON = { answer: '정답이 틀림', options: '보기가 이상함', question: '문제 설명이 틀림', explanation: '해설이 틀림', other: '기타' };
+async function viewReports(_p, query) {
+  const status = query.status ?? 'OPEN';
+  const d = await api('/reports' + (status ? '?status=' + status : ''));
+  const tab = (k, l) => `<a class="btn sm ${status === k ? 'primary' : ''}" href="#/reports?status=${k}">${l} ${d.counts[k] || 0}</a>`;
+  const all = Object.values(d.counts).reduce((a, b) => a + b, 0);
+  const qview = (q, label) => !q ? '' : `<div class="rep-q"><div class="muted" style="font-size:12px">${label}</div><div class="sub-q">${esc(q.question)}</div><ol class="sub-opts">${[1, 2, 3, 4].map((n) => `<li class="${n === q.correct_option ? 'ok' : ''}">${esc(q['option_' + n])}${n === q.correct_option ? ' ✔' : ''}</li>`).join('')}</ol>${q.explanation ? `<div class="sub-exp">해설: ${esc(q.explanation)}</div>` : ''}</div>`;
+  $main.innerHTML = `
+    <div class="page-head"><div class="grow"><h1 class="page">정정 요청</h1><p class="page-sub">사용자가 틀렸다고 알려 준 문제예요. <b>문항 고치기</b>로 바로 고친 뒤 처리 완료로 바꾸세요.</p></div></div>
+    <div style="display:flex;gap:6px;margin-bottom:12px">${tab('OPEN', '확인 필요')}${tab('DONE', '처리 완료')}${tab('REJECTED', '문제 없음')}<a class="btn sm ${status === '' ? 'primary' : ''}" href="#/reports?status=">전체 ${all}</a></div>
+    ${d.rows.length ? d.rows.map((r) => `<div class="card sub-card" data-id="${esc(r.id)}">
+      <div class="sub-head"><span class="pill ${REP_ST[r.status]?.[1]}">${REP_ST[r.status]?.[0]}</span><span class="pill red">${REP_REASON[r.reason] || esc(r.reason)}</span>
+        ${r.qid ? `<a href="#/q/${esc(r.qid)}"><b>${esc(r.qid)}</b></a>` : '<b>문항 지정 안 됨</b>'}${r.current ? ` · 출제 ${fmt(r.current.served)}회 · 정답률 ${pct(r.current.accuracy)}` : ''}
+        <span class="muted" style="margin-left:auto">${esc(r.nickname || '')}${r.email ? ` · <a href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : ''} · ${dt(r.createdAt)}</span></div>
+      ${r.detail ? `<div class="rep-detail">“${esc(r.detail)}”</div>` : ''}
+      <div class="rep-cols">${qview(r.current, '지금 문항')}${r.snapshot && r.current && JSON.stringify(r.snapshot.question + r.snapshot.correct_option) !== JSON.stringify(r.current.question + r.current.correct_option) ? qview(r.snapshot, '요청 당시 문항') : ''}</div>
+      <div class="sub-acts">
+        ${r.qid ? `<button class="btn primary sm" data-edit="${esc(r.qid)}">문항 고치기</button>` : ''}
+        ${r.status !== 'DONE' ? '<button class="btn sm" data-st="DONE">처리 완료</button>' : ''}
+        ${r.status !== 'REJECTED' ? '<button class="btn sm" data-st="REJECTED">문제 없음</button>' : ''}
+        ${r.status !== 'OPEN' ? '<button class="btn sm" data-st="OPEN">다시 확인 필요로</button>' : ''}
+        ${r.note ? `<span class="muted">메모: ${esc(r.note)}</span>` : ''}
+      </div></div>`).join('') : '<div class="empty">해당하는 요청이 없습니다.</div>'}`;
+  $main.querySelectorAll('.sub-card').forEach((c) => {
+    c.querySelector('[data-edit]')?.addEventListener('click', (e) => quickEdit(e.target.dataset.edit, route));
+    c.querySelectorAll('[data-st]').forEach((b) => (b.onclick = async () => {
+      const note = b.dataset.st === 'OPEN' ? null : prompt('메모 (선택)', '') ?? null;
+      try { await api('/reports/' + c.dataset.id, { method: 'POST', body: { status: b.dataset.st, note } }); toast('변경했습니다'); route(); } catch (e) { toast(e.message, true); }
+    }));
+  });
+}
+
 // ---------- 목록에서 바로 고치기 · 지우기 ----------
 async function removeQuestion(q, reload) {
   const msg = q.served

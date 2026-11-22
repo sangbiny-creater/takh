@@ -807,3 +807,71 @@ body.secure #app { user-select: none; -webkit-user-select: none; }
 #tabbar a .tab-ic { width: calc(36 * var(--u)); height: calc(36 * var(--u)); }
 #tabbar a { font-size: calc(19 * var(--u)); -webkit-text-stroke: calc(.3 * var(--u)) currentColor; gap: calc(1 * var(--u)); }
 .home .tiles.three .tile.ccard span { top: calc(63 * var(--u)); }
+
+/* ===== 2026-11-22: 홈 버튼 2개 · 아바타(테두리) · 문제내기 · 정정요청 · 프로필 ===== */
+/* 홈: 문제 풀기 버튼과 양끝을 맞춘 버튼 2개 (높이 = 예전 메뉴 칸의 60%) */
+.home-actions { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.hact { height: calc(98 * var(--u) * .6); display: flex; align-items: center; justify-content: center; gap: 8px; border: calc(2.4 * var(--u)) solid #8CC79A; border-radius: calc(16 * var(--u)); box-shadow: 0 calc(3 * var(--u)) 0 #B7DCBF; background: linear-gradient(180deg, #FFFFFB, #FFFCF2); color: #1C2B22; font-family: 'Jua', sans-serif; font-size: calc(19 * var(--u)); letter-spacing: -.2px; }
+.hact i { width: calc(24 * var(--u)); height: calc(24 * var(--u)); color: #2A7D52; display: grid; place-items: center; }
+.hact i svg { width: 100%; height: 100%; }
+.hact:active { transform: translateY(2px); box-shadow: 0 1px 0 #B7DCBF; }
+
+/* 아바타 + 테두리 (art.js avatarBox) — 사진과 테두리를 따로 겹침. 꾸미기 테두리는 data-frame 으로 추가 */
+.av { --av: 48px; position: relative; display: inline-block; flex: none; width: var(--av); height: var(--av); vertical-align: middle; }
+.av-img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #fff; }
+.av-frame { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: center / contain no-repeat; }
+.av[data-frame="basic"] .av-frame { box-shadow: inset 0 0 0 calc(var(--av) * .055) #fff, 0 0 0 calc(var(--av) * .035) #2E8A5E, 0 2px 6px rgba(20, 60, 40, .18); }
+.greet-l1 { display: inline-flex; align-items: center; gap: 8px; }
+.greet-av { --av: clamp(36px, 5.4dvh, 46px); }
+.set-av { --av: 30px; }
+.pod-av { --av: clamp(48px, 8dvh, 62px); }
+.pod.first .pod-av { --av: clamp(68px, 11.5dvh, 90px); }
+.pod.first .pod-av[data-frame="basic"] .av-frame { box-shadow: inset 0 0 0 calc(var(--av) * .055) #FFD66B, 0 0 0 calc(var(--av) * .045) #FFF3C4, 0 4px 12px rgba(0,0,0,.15); }
+
+/* 입력 화면 공통 (문제내기 · 정정요청 · 프로필) */
+.form-page { padding-bottom: 24px; }
+.fp-lead { margin: 14px 2px 10px; font-size: 14px; line-height: 1.55; color: var(--ink-2); font-weight: 600; }
+.fp-card { padding: 14px; display: grid; gap: 14px; }
+.fp-l { display: grid; gap: 6px; font-size: 14px; font-weight: 800; color: #1F3A2B; }
+.fp-l small, .fp-h small { font-weight: 600; color: var(--ink-3); font-size: 12px; }
+.fp-l input:not([type=radio]), .fp-l select, .fp-l textarea { width: 100%; font: inherit; font-size: 16px; font-weight: 500; padding: 11px 12px; border-radius: 12px; border: 1.5px solid #CFE0D3; background: #fff; outline: none; resize: vertical; }
+.fp-l input:focus, .fp-l select:focus, .fp-l textarea:focus { border-color: #2E8A5E; }
+.fp-opt { display: grid; grid-template-columns: 24px 22px 1fr; align-items: center; gap: 6px; font-weight: 700; }
+.fp-opt input[type=radio] { width: 20px; height: 20px; accent-color: #2E8A5E; }
+.fp-opt b { font-size: 18px; color: var(--ink-2); }
+.fp-h { margin: 18px 2px 8px; font-size: 16px; font-weight: 900; display: flex; align-items: baseline; gap: 8px; }
+.fp-mine { display: grid; gap: 8px; }
+.fp-item { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; padding: 10px 12px; border-radius: 12px; background: #fff; border: 1.5px solid #E2EDE3; font-size: 14px; line-height: 1.45; }
+.fp-item .tag { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.tag.gray { background: #EEF2EF; color: #5B6B61; } .tag.green { background: #DDF2DE; color: #1F7A4D; } .tag.red { background: #FCE1E1; color: #C2373C; }
+.fp-qs { display: grid; gap: 8px; max-height: 300px; overflow: auto; padding: 2px; }
+.fp-q { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; padding: 10px 12px; border-radius: 12px; background: #fff; border: 1.5px solid #E2EDE3; font-size: 14px; font-weight: 600; line-height: 1.45; cursor: pointer; }
+.fp-q:has(input:checked) { border-color: #2E8A5E; background: #F1FAF4; }
+.fp-q input { margin-top: 3px; accent-color: #2E8A5E; width: 18px; height: 18px; }
+.fp-q em { display: block; font-style: normal; font-size: 12px; color: var(--ink-3); }
+.fp-q b { display: block; margin-top: 2px; font-size: 13px; color: #1F7A4D; }
+.fp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-r input { position: absolute; opacity: 0; pointer-events: none; }
+.chip-r span { display: inline-block; padding: 8px 12px; border-radius: 999px; border: 1.5px solid #CFE0D3; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+.chip-r input:checked + span { background: #2E8A5E; border-color: #2E8A5E; color: #fff; }
+.form-page .btn-primary.big { width: 100%; }
+.dq-report { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.dq-report svg { width: 14px; height: 14px; }
+
+/* 프로필 */
+.pf-top { margin-top: 14px; padding: 16px; display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; }
+.pf-big { --av: 92px; }
+.pf-grid { padding: 14px 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 6px; justify-items: center; }
+.pf-pick, .pf-frame { padding: 6px; border-radius: 50%; border: 3px solid transparent; background: none; cursor: pointer; }
+.pf-pick .av { --av: 58px; }
+.pf-pick.on { border-color: #F5A04A; background: #FFF3E2; }
+.pf-frames { padding: 12px; display: flex; gap: 12px; }
+.pf-frame { border-radius: 16px; display: grid; justify-items: center; gap: 4px; font-size: 13px; font-weight: 800; }
+.pf-frame .av { --av: 52px; }
+.pf-frame.on { border-color: #F5A04A; background: #FFF3E2; }
+.profile .btn-primary.big { margin-top: 16px; }
+
+/* 결과 목록: 처음엔 테두리 없음, 누른 줄만 주황 테두리가 잠깐 */
+.rec-card .rec-row { border: 2px solid transparent; border-radius: 14px; transition: border-color .12s, background-color .12s; }
+.rec-card .rec-row.tap { border-color: #F5A04A; background: #FFF3E2; }
+.greet-l1 { gap: 0; } .greet-l1 .greet-av { margin-right: 10px; }

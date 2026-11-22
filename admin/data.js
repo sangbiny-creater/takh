@@ -89,6 +89,11 @@ function weekKey(ms = Date.now()) {
   const y0 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return `${d.getUTCFullYear()}-W${String(Math.ceil(((d - y0) / 86400000 + 1) / 7)).padStart(2, '0')}`;
 }
+const countBy = (rows) => rows.reduce((m, r) => ((m[r.status] = (m[r.status] || 0) + 1), m), {});
+export async function pendingCounts() {
+  const [a, b] = await Promise.all([count(query(collection(fs, 'submissions'), where('status', '==', 'PENDING'))), count(query(collection(fs, 'reports'), where('status', '==', 'OPEN')))]);
+  return { submissions: a, reports: b };
+}
 const count = async (q) => (await getCountFromServer(q)).data().count;
 const runRow = (r) => ({
   id: r.id, week_key: r.weekKey, total_score: r.totalScore, correct_count: r.correctCount, question_count: r.questionCount, total_time_ms: r.totalTimeMs,
@@ -254,6 +259,21 @@ export async function api(path, opts = {}) {
     const snap = await getDocs(query(collection(fs, 'weeks', week, 'best'), orderBy('score', 'desc'), orderBy('timeMs', 'asc'), orderBy('finishedAt', 'asc'), limit(200)));
     return { week, thisWeek, lastWeek, list: snap.docs.map((d, i) => ({ rank: i + 1, nickname: d.data().nickname, score: d.data().score, correct_count: d.data().correct, total_time_ms: d.data().timeMs, finished_at: d.data().finishedAt, run_id: d.data().runId })) };
   }
+
+  // ----- 사용자 문제 · 정정 요청 -----
+  if (p === '/submissions' && method === 'GET') {
+    const snap = await getDocs(query(collection(fs, 'submissions'), orderBy('createdAt', 'desc'), limit(500)));
+    const rows = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+    return { rows: qs.status ? rows.filter((r) => r.status === qs.status) : rows, counts: countBy(rows) };
+  }
+  if (seg[0] === 'submissions' && seg[1]) { const r = await call('adminSubmission', { id: seg[1], ...opts.body }); invalidate(); return r; }
+  if (p === '/reports' && method === 'GET') {
+    await loadAll();
+    const snap = await getDocs(query(collection(fs, 'reports'), orderBy('createdAt', 'desc'), limit(500)));
+    const rows = snap.docs.map((d) => { const r = { ...d.data(), id: d.id }; const q = r.qid && Qs.get(r.qid); return { ...r, current: q ? row(q) : null }; });
+    return { rows: qs.status ? rows.filter((r) => r.status === qs.status) : rows, counts: countBy(rows) };
+  }
+  if (seg[0] === 'reports' && seg[1]) return call('adminReport', { id: seg[1], ...opts.body });
 
   if (p === '/settings' && method === 'GET') {
     return { only_approved: '0', daily_play_limit: '5', avoid_recent_days: '14', ...((await getDoc(doc(fs, 'settings', 'game'))).data() || {}) };

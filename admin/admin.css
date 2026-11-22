@@ -206,3 +206,14 @@ details.imp summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
 .table-wrap { overflow-x: auto; }
 .qtable td.qcell { max-width: 380px; } .qtable .acc-bar { min-width: 100px; }
 .qtable td.acts { white-space: normal; } .qtable td.acts .btn { display: block; width: 100%; margin: 0 0 4px; } .qtable td.acts .btn + .btn { margin-left: 0; } .qtable td.qcell { max-width: 340px; min-width: 260px; }
+.nav-badge { margin-left: 4px; min-width: 18px; padding: 0 6px; border-radius: 999px; background: #E5484D; color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; display: inline-block; text-align: center; }
+.nav-badge:empty { display: none; }
+.sub-card { margin-bottom: 12px; padding: 14px 16px; }
+.sub-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
+.sub-q { margin-top: 10px; font-weight: 700; line-height: 1.5; }
+.sub-opts { margin: 6px 0 0; padding-left: 22px; font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+.sub-opts .ok { color: #1F7A4D; font-weight: 800; }
+.sub-exp { margin-top: 6px; font-size: 13px; color: var(--ink-3); }
+.sub-acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 12px; }
+.rep-detail { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #FFF6E5; font-size: 14px; line-height: 1.5; }
+.rep-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }

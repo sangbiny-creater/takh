@@ -85,3 +85,17 @@ export function avatar(nick, cls = '') {
   const fb = svgData(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="${AVATAR_COLORS[h % AVATAR_COLORS.length]}"/><text x="32" y="42" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="900" fill="#fff">${esc(letter)}</text></svg>`);
   return `<img class="avatar ${cls}" src="assets/gpt/avatar_${n}.png" alt="" onerror="this.onerror=null;this.src='${fb}'" draggable="false">`;
 }
+
+/**
+ * 아바타 + 테두리. 사진(av-img)과 테두리(av-frame)를 따로 겹쳐서 그림.
+ *  - 테두리는 data-frame 값으로 모양을 바꿈 (app.css 의 .av[data-frame="..."]). 지금은 'basic' 하나.
+ *  - 나중에 꾸미기 테두리 그림을 넣을 때: assets/frames/<이름>.png 를 만들고
+ *    .av[data-frame="<이름>"] .av-frame { inset: -14%; border: 0; box-shadow: none; background-image: url(assets/frames/<이름>.png); }
+ *    처럼 테두리 칸을 사진보다 크게 잡으면 사진 밖으로 장식이 나와도 잘리지 않음.
+ *  - id 가 없으면(아직 안 고름) 닉네임으로 정해지는 기본 아바타.
+ */
+export const AVATAR_IDS = Array.from({ length: AVATAR_COUNT }, (_, i) => i + 1);
+export function avatarBox(id, { nick = '', frame = 'basic', size = null, cls = '' } = {}) {
+  const n = String(id || (hash(nick) % AVATAR_COUNT) + 1).padStart(2, '0');
+  return `<span class="av ${cls}" data-frame="${esc(frame || 'basic')}"${size ? ` style="--av:${size}px"` : ''}><img class="av-img" src="assets/gpt/avatar_${n}.png" alt="" draggable="false"><i class="av-frame"></i></span>`;
+}

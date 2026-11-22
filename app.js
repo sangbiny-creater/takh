@@ -1,6 +1,6 @@
 // 타임어택 한국사 — 플레이어 웹앱 (프레임워크 없는 SPA)
 import { call, currentUser, redirectResult, loginGoogle, loginKakao, loginGuest, loginEmail, signupEmail, resetPassword, logout, deleteMe, authErrorText, providerOf, KAKAO_ON } from './firebase.js';
-import { art, eraArt, avatar } from './art.js';
+import { art, eraArt, avatar, avatarBox, AVATAR_IDS } from './art.js';
 
 const $app = document.getElementById('app');
 const $tabbar = document.getElementById('tabbar');
@@ -110,8 +110,10 @@ function shareData(score, correct) {
 }
 async function share(score, correct) {
   const d = shareData(score, correct);
-  if (Native.on && Native.share && (await Native.share(d))) return;
-  if (navigator.share) { try { await navigator.share(d); return; } catch (e) { if (e?.name === 'AbortError') return; } }
+  // 글을 먼저, 링크를 맨 뒤에: 링크를 따로(url) 넘기면 카카오톡이 링크를 앞에 붙이므로 글 안에 넣어서 보냄
+  const msg = `${d.text}\n${d.url}`;
+  if (Native.on && Native.share && (await Native.share({ title: d.title, text: msg }))) return;
+  if (navigator.share) { try { await navigator.share({ text: msg }); return; } catch (e) { if (e?.name === 'AbortError') return; } }
   const body = encodeURIComponent(`${d.text}\n${d.url}`);
   const sms = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? `sms:&body=${body}` : `sms:?body=${body}`;
   modal(`<h3>자랑하기</h3><p class="share-text">${esc(d.text)}<br><span class="muted">${esc(d.url)}</span></p>
@@ -126,6 +128,8 @@ async function share(score, correct) {
 
 // ---------- 디자인 공통 (GPT 시안 기준: 초록 머리띠 · 하늘 장면 · 크림 카드) ----------
 const UI = {
+  flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>',
+  quill: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/><path d="M4 20h16"/></svg>',
   spark: '<svg class="spark" viewBox="0 0 40 40"><path d="M20 4v9M33 9l-6 6M36 22h-9" stroke="#FFC928" stroke-width="5" stroke-linecap="round"/></svg>',
   sparkL: '<svg class="spark l" viewBox="0 0 40 40"><path d="M20 4v9M7 9l6 6M4 22h9" stroke="#FFC928" stroke-width="5" stroke-linecap="round"/></svg>',
   laurel: (flip) => `<svg class="laurel ${flip ? 'r' : ''}" viewBox="0 0 40 90"><path d="M30 86C12 70 8 44 16 8" fill="none" stroke="#E5A81B" stroke-width="3.5" stroke-linecap="round"/>${[14, 26, 38, 50, 62, 74].map((y, i) => `<ellipse cx="${i % 2 ? 24 : 10}" cy="${y}" rx="7" ry="4.2" transform="rotate(${i % 2 ? -35 : 35} ${i % 2 ? 24 : 10} ${y})" fill="#F7C531" stroke="#E0A11A" stroke-width="1.5"/>`).join('')}</svg>`,
@@ -156,7 +160,7 @@ function hdr(title, { back = null, right = '', ico = '' } = {}) {
 
 // ---------- 라우터 ----------
 const PUBLIC = new Set(['login', 'email', 'signup', 'terms', 'doc']);
-const routes = { '': viewHome, play: viewPlay, ranking: viewRanking, results: viewResults, wrong: viewWrong, settings: viewSettings, account: viewAccount, doc: viewDoc, login: viewLogin, email: viewEmail, signup: viewSignup, terms: viewTerms, nickname: viewNickname };
+const routes = { '': viewHome, play: viewPlay, ranking: viewRanking, results: viewResults, wrong: viewWrong, settings: viewSettings, account: viewAccount, doc: viewDoc, login: viewLogin, email: viewEmail, signup: viewSignup, terms: viewTerms, nickname: viewNickname, submit: viewSubmit, report: viewReport, profile: viewProfile };
 const TABS = { '': 'home', ranking: 'ranking', results: 'results', wrong: 'wrong' };
 let cleanup = null;
 async function route() {
@@ -323,7 +327,7 @@ function viewSettings() {
       ${hdr('설정', { back: '#/' })}
       <div class="set-list">
         ${row(UI.sUser, '계정', `${PROVIDER_NAME[kind] || ''} · ${esc(store.nick)}`, { href: '#/account' })}
-        ${row(UI.sPencil, '닉네임 바꾸기', esc(store.nick), { id: 'nick' })}
+        ${row(CONFIG.me?.avatar ? avatarBox(CONFIG.me.avatar, { frame: CONFIG.me.frame, cls: 'set-av' }) : UI.sPencil, '프로필 변경', esc(store.nick), { href: '#/profile' })}
         ${row(UI.sTrophy, '점수 규칙', '', { id: 'rules' })}
         ${row(UI.sDoc, '이용약관', '', { href: '#/doc/terms' })}
         ${row(UI.sShield, '개인정보 처리방침', '', { href: '#/doc/privacy' })}
@@ -331,7 +335,6 @@ function viewSettings() {
       </div>
       <p class="set-foot">BROWN CRAB · 타임어택 한국사</p>
     </div>`;
-  $app.querySelector('#nick').onclick = editNickname;
   $app.querySelector('#rules').onclick = showRules;
 }
 function viewAccount() {
@@ -419,6 +422,103 @@ function editNickname() {
   });
 }
 
+// ---------- 문제내기 (사용자가 낸 문제 → 백오피스 '사용자 문제') ----------
+async function viewSubmit() {
+  const eras = CONFIG.series.eras || [];
+  $app.innerHTML = `
+    <div class="results-page form-page">
+      ${hdr('문제내기', { back: '#/' })}
+      <p class="fp-lead">내가 낸 문제가 채택되면 실제 게임에 나와요! 검토 뒤 채택되면 메일로 알려 드려요.</p>
+      <form class="ccard fp-card" id="f">
+        <label class="fp-l">시대<select name="era"><option value="">잘 모르겠어요</option>${eras.map((e) => `<option>${esc(e)}</option>`).join('')}</select></label>
+        <label class="fp-l">문제<textarea name="question" rows="3" maxlength="300" placeholder="예) 훈민정음을 창제한 조선의 왕은?" required></textarea></label>
+        <div class="fp-l">보기 (정답에 동그라미를 눌러 주세요)
+          ${[1, 2, 3, 4].map((n) => `<label class="fp-opt"><input type="radio" name="correct_option" value="${n}" ${n === 1 ? 'required' : ''}><b>${NUM[n - 1]}</b><input name="option_${n}" maxlength="60" placeholder="보기 ${n}" required></label>`).join('')}
+        </div>
+        <label class="fp-l"><span>해설 <small>(선택)</small></span><textarea name="explanation" rows="2" maxlength="300" placeholder="왜 그게 정답인지 짧게 적어 주세요"></textarea></label>
+        <label class="fp-l">채택 소식 받을 이메일<input name="email" type="email" maxlength="120" value="${esc(CONFIG.email || '')}" placeholder="example@email.com"></label>
+        <div class="err" id="err"></div>
+        <button class="btn-primary big" type="submit">문제 보내기</button>
+      </form>
+      <h3 class="fp-h">내가 낸 문제</h3>
+      <div id="mine" class="fp-mine"><div class="muted">불러오는 중…</div></div>
+    </div>`;
+  const ST = { PENDING: ['검토 중', 'gray'], ADOPTED: ['채택!', 'green'], REJECTED: ['미채택', 'red'] };
+  const loadMine = () => api('mySubmissions').then((list) => {
+    $app.querySelector('#mine').innerHTML = list.length ? list.map((x) => `<div class="fp-item"><span class="tag ${ST[x.status]?.[1]}">${ST[x.status]?.[0] || ''}</span><span>${esc(x.question)}</span></div>`).join('') : '<div class="muted">아직 낸 문제가 없어요.</div>';
+  }).catch(() => { $app.querySelector('#mine').innerHTML = ''; });
+  loadMine();
+  $app.querySelector('#f').onsubmit = async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target).entries());
+    const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
+    try { await api('submitQuestion', d); toast('문제를 보냈어요! 고마워요'); e.target.reset(); e.target.email.value = CONFIG.email || d.email || ''; $app.querySelector('#err').textContent = ''; loadMine(); }
+    catch (err) { $app.querySelector('#err').textContent = err.message; }
+    btn.disabled = false;
+  };
+}
+
+// ---------- 문제 정정요청 (→ 백오피스 '정정 요청') ----------
+const REPORT_REASONS = [['answer', '정답이 틀렸어요'], ['options', '보기가 이상해요'], ['question', '문제 설명이 틀렸어요'], ['explanation', '해설이 틀렸어요'], ['other', '기타']];
+async function viewReport(qid) {
+  $app.innerHTML = `
+    <div class="results-page form-page">
+      ${hdr('문제 정정요청', { back: '#/' })}
+      <p class="fp-lead">틀린 문제를 알려 주시면 확인해서 고칠게요. 최근에 푼 문제에서 골라 주세요.</p>
+      <form class="ccard fp-card" id="f">
+        <div class="fp-l">어떤 문제인가요?<div id="qs" class="fp-qs"><div class="muted">최근 문제 불러오는 중…</div></div></div>
+        <div class="fp-l">무엇이 틀렸나요?<div class="fp-chips">${REPORT_REASONS.map(([k, l], i) => `<label class="chip-r"><input type="radio" name="reason" value="${k}" ${i === 0 ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
+        <label class="fp-l">자세한 내용<textarea name="detail" rows="3" maxlength="500" placeholder="예) 정답은 ②번이 아니라 ③번이에요. 근거: …"></textarea></label>
+        <label class="fp-l"><span>답변 받을 이메일 <small>(선택)</small></span><input name="email" type="email" maxlength="120" value="${esc(CONFIG.email || '')}"></label>
+        <div class="err" id="err"></div>
+        <button class="btn-primary big" type="submit">정정 요청 보내기</button>
+      </form>
+    </div>`;
+  api('recentQuestions').then((list) => {
+    const box = $app.querySelector('#qs');
+    const items = list.map((q) => `<label class="fp-q"><input type="radio" name="qid" value="${esc(q.id)}" ${q.id === qid ? 'checked' : ''}><span><em>${esc(q.era || '')}</em>${esc(q.question)}<b>정답: ${esc(q.answer)}</b></span></label>`).join('');
+    box.innerHTML = items + `<label class="fp-q"><input type="radio" name="qid" value="" ${!qid && !list.length ? 'checked' : ''}><span>목록에 없어요 — 아래에 문제 내용을 적을게요</span></label>`;
+    box.querySelector('input:checked')?.closest('label')?.scrollIntoView({ block: 'nearest' });
+  }).catch(() => { $app.querySelector('#qs').innerHTML = '<div class="muted">최근 문제를 불러오지 못했어요. 아래에 문제 내용을 적어 주세요.</div>'; });
+  $app.querySelector('#f').onsubmit = async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target).entries());
+    if (d.qid === undefined) { $app.querySelector('#err').textContent = '어떤 문제인지 골라 주세요.'; return; }
+    const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
+    try { await api('reportQuestion', d); toast('정정 요청을 보냈어요! 고마워요'); location.hash = '#/'; }
+    catch (err) { $app.querySelector('#err').textContent = err.message; btn.disabled = false; }
+  };
+}
+
+// ---------- 프로필 변경 (아바타 · 테두리 · 닉네임) ----------
+const FRAMES = [['basic', '기본']]; // 꾸미기 테두리가 생기면 여기에 추가 (서버 index.js FRAMES 와 같이)
+async function viewProfile() {
+  let sel = CONFIG.me?.avatar || 1, frame = CONFIG.me?.frame || 'basic';
+  $app.innerHTML = `
+    <div class="results-page form-page profile">
+      ${hdr('프로필 변경', { back: '#/settings' })}
+      <div class="ccard pf-top"><div id="pv"></div><label class="fp-l">닉네임<input id="nick" maxlength="10" value="${esc(store.nick)}"></label></div>
+      <h3 class="fp-h">아바타</h3>
+      <div class="ccard pf-grid" id="grid">${AVATAR_IDS.map((n) => `<button type="button" class="pf-pick" data-n="${n}">${avatarBox(n, { frame })}</button>`).join('')}</div>
+      <h3 class="fp-h">테두리 <small>곧 더 많은 테두리가 생겨요</small></h3>
+      <div class="ccard pf-frames" id="frames">${FRAMES.map(([k, l]) => `<button type="button" class="pf-frame" data-f="${k}">${avatarBox(sel, { frame: k })}<span>${l}</span></button>`).join('')}</div>
+      <div class="err" id="err"></div>
+      <button class="btn-primary big" id="save">저장</button>
+    </div>`;
+  const paint = () => {
+    $app.querySelector('#pv').innerHTML = avatarBox(sel, { frame, cls: 'pf-big' });
+    $app.querySelectorAll('.pf-pick').forEach((b) => b.classList.toggle('on', Number(b.dataset.n) === sel));
+    $app.querySelectorAll('.pf-frame').forEach((b) => { b.classList.toggle('on', b.dataset.f === frame); b.querySelector('.av-img').src = `assets/gpt/avatar_${String(sel).padStart(2, '0')}.png`; });
+  };
+  paint();
+  $app.querySelector('#grid').onclick = (e) => { const b = e.target.closest('.pf-pick'); if (b) { sel = Number(b.dataset.n); paint(); } };
+  $app.querySelector('#frames').onclick = (e) => { const b = e.target.closest('.pf-frame'); if (b) { frame = b.dataset.f; paint(); } };
+  $app.querySelector('#save').onclick = async () => {
+    try { await api('setProfile', { avatar: sel, frame, nickname: $app.querySelector('#nick').value }); await loadConfig(true); toast('프로필을 바꿨어요'); location.hash = '#/settings'; }
+    catch (e) { $app.querySelector('#err').textContent = e.message; }
+  };
+}
+
 function showRules() {
   const s = CONFIG.scoring;
   modal(`<h3>점수 규칙</h3>
@@ -483,7 +583,7 @@ async function viewHome() {
       <header class="hdr hdr-home"><h1 class="hdr-brand">${art('logo', { cls: 'brand-logo' })}<span>${esc(CONFIG.series.shortTitle)}</span></h1><a class="hdr-gear" href="#/settings" aria-label="설정">${icon('gear')}</a></header>
       <section class="hero">
         <div class="hero-text">
-          <h2><span class="hl">${esc(store.nick)}</span>님,${UI.spark}<br>오늘도 한국사 도전!</h2>
+          <h2><span class="greet-l1">${CONFIG.me?.avatar ? avatarBox(CONFIG.me.avatar, { frame: CONFIG.me.frame, cls: 'greet-av' }) : ''}<span class="hl">${esc(store.nick)}</span>님,${UI.spark}</span><br>오늘도 한국사 도전!</h2>
           <div class="rank-pill" id="week-badge">${art('crown', { cls: 'pill-crown' })}<span>이번 주 기록에 도전!</span></div>
         </div>
         ${art('homeScene', { cls: 'hero-scene' })}
@@ -491,10 +591,9 @@ async function viewHome() {
       </section>
       <button class="btn-primary play-btn" id="play"><span class="play-tri">${icon('play')}</span>문제 풀기${UI.spark}</button>
       <p class="play-sub">${CONFIG.series.questionCount}문제 · 문제당 ${CONFIG.scoring.timeLimitMs / 1000}초 · <a href="#" id="rules">점수 규칙</a><span id="left"></span></p>
-      <section class="tiles three">
-        <a class="tile ccard" href="#/ranking">${art('tileTrophy', { cls: 'tile-ico' })}<span>주간 랭킹</span></a>
-        <a class="tile ccard" href="#/results">${art('tileChart', { cls: 'tile-ico' })}<span>내 결과 보기</span></a>
-        <a class="tile ccard" href="#/wrong">${art('tileStar', { cls: 'tile-ico' })}<span>오답 노트</span></a>
+      <section class="home-actions">
+        <a class="hact ccard" href="#/submit"><i>${UI.quill}</i><span>문제내기</span></a>
+        <a class="hact ccard" href="#/report"><i>${UI.flag}</i><span>문제 정정요청</span></a>
       </section>
     </div>`;
   $app.querySelector('#play').onclick = () => { location.hash = '#/play'; };
@@ -780,7 +879,7 @@ async function viewRanking() {
     const [a, b, c] = r.list;
     const pod = (p, n, cls) => p ? `<div class="pod ${cls}">
         <div class="medal">${n === 1 ? art('crown') : art(n === 2 ? 'medal2' : 'medal3')}</div>
-        ${avatar(p.nickname)}<div class="nick">${esc(p.nickname)}</div><div class="score">${fmt(p.score)}</div></div>` : '<div></div>';
+        ${avatarBox(p.avatar, { nick: p.nickname, frame: p.frame, cls: 'pod-av' })}<div class="nick">${esc(p.nickname)}</div><div class="score">${fmt(p.score)}</div></div>` : '<div></div>';
     box.innerHTML = `
       <section class="podium">${art('rankingScene', { cls: 'podium-bg' })}${pod(b, 2, 'second')}${pod(a, 1, 'first')}${pod(c, 3, 'third')}</section>
       <section class="card rank-list">${r.list.length > 3 ? r.list.slice(3).map((p) => `
@@ -811,11 +910,17 @@ async function viewResults(id) {
       <section class="ccard rec-card">
         <h2 class="rec-title"><i>${UI.clipboard}</i>최근 풀이 기록</h2>
         ${r.recent.length ? r.recent.map((x, i) => `
-          <a class="rec-row ${i === 0 ? 'first' : ''}" href="#/results/${x.id}"><i>${UI.calendar}</i><span class="d">${kdate(x.finished_at)}</span><span class="t">${ktime(x.finished_at)}</span><span class="s">${fmt(x.total_score)}점</span>${icon('chev')}</a>`).join('')
+          <a class="rec-row" href="#/results/${x.id}"><i>${UI.calendar}</i><span class="d">${kdate(x.finished_at)}</span><span class="t">${ktime(x.finished_at)}</span><span class="s">${fmt(x.total_score)}점</span>${icon('chev')}</a>`).join('')
           : `<div class="empty">${art('emptyState')}아직 풀이 기록이 없어요.<br><a href="#/play" class="go-link">첫 도전 시작하기 →</a></div>`}
       </section>
       ${r.total ? `<p class="week-note">최고 점수 ${fmt(r.bestScore)}점</p>` : ''}
     </div>`;
+  // 누른 줄만 주황 테두리가 잠깐 보였다가 상세로 넘어감
+  $app.querySelectorAll('.rec-row').forEach((a) => (a.onclick = (e) => {
+    e.preventDefault();
+    a.classList.add('tap');
+    setTimeout(() => { location.hash = a.getAttribute('href'); }, 260);
+  }));
 }
 
 async function viewResultDetail(id) {
@@ -833,7 +938,7 @@ async function viewResultDetail(id) {
         const st = q.isCorrect ? 'ok' : 'no';
         return `
         <section class="ccard dq">
-          <div class="dq-head ${st}">${q.seq}번 문제 <b>[${q.isCorrect ? '정답' : q.status === 'TIMEOUT' ? '시간 초과' : '오답'}]</b><em>${sec(q.elapsedMs || 0)} · ${fmt(q.points)}점</em></div>
+          <div class="dq-head ${st}">${q.seq}번 문제 <b>[${q.isCorrect ? '정답' : q.status === 'TIMEOUT' ? '시간 초과' : '오답'}]</b><em>${sec(q.elapsedMs || 0)} · ${fmt(q.points)}점</em></div><a class="dq-report" href="#/report/${esc(q.qid || q.id || '')}">${UI.flag}정정 요청</a>
           ${lead ? `<p class="dq-lead">${esc(lead)}</p>` : ''}
           <div class="clue-box">${esc(clue)}</div>
           <div class="num-opts">${q.options.map((o, i) => `<div class="no-opt ${i === q.correctIndex ? 'correct' : i === q.chosenIndex ? 'wrong' : ''}"><span>${NUM[i]}</span>${esc(o)}${i === q.correctIndex ? `<i class="ok-mark">${icon('check')}</i>` : i === q.chosenIndex ? `<i class="no-mark">${icon('x')}</i>` : ''}</div>`).join('')}</div>
