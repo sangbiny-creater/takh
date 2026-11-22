@@ -131,6 +131,7 @@ async function viewQuestions(_p, query) {
   $main.innerHTML = `
     <div class="page-head"><div class="grow"><h1 class="page">문항 관리</h1></div>
       <a class="btn" id="export">CSV 내보내기 (현재 필터)</a>
+      <a class="btn" id="export-md">MD 내보내기 (현재 필터)</a>
       <a class="btn primary" href="#/q/new">+ 새 문항</a></div>
     <div class="flag-chips" id="flags">
       <button data-f="" class="${!st.flag ? 'on' : ''}">전체</button>
@@ -237,6 +238,7 @@ async function viewQuestions(_p, query) {
   };
   $main.querySelector('#reset').onclick = () => { location.hash = '#/questions'; route(); };
   $main.querySelector('#export').onclick = () => exportQuestions(st, { stats: true }).catch((e) => toast(e.message, true));
+  $main.querySelector('#export-md').onclick = () => exportQuestions(st, { format: 'md' }).catch((e) => toast(e.message, true));
   await load();
 }
 
