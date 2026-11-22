@@ -878,3 +878,11 @@ body.secure #app { user-select: none; -webkit-user-select: none; }
 /* 웹 배너 (AdSense): 문제 화면 맨 위 광고 자리(.ad-bar)에 겹쳐 띄움 — 문제가 바뀌어도 다시 불러오지 않음 */
 #web-banner { position: absolute; top: env(safe-area-inset-top); left: 50%; transform: translateX(-50%); width: 320px; height: 50px; z-index: 15; overflow: hidden; }
 #web-banner[hidden] { display: none; }
+
+/* 첫 화면 버튼 그림 (GPT: btn_play · act_submit · act_report — docs/GPT_HOME_BUTTON_PROMPTS.md) */
+.home .play-btn.play-img { display: flex; align-items: center; justify-content: center; width: min(100%, calc(clamp(64px, 9.6dvh, 84px) * 4.137)); height: auto; aspect-ratio: 1088 / 263; margin-left: auto; margin-right: auto;
+  padding: 0 4% 3% 22%; border: 0; border-radius: 999px; background: url(assets/gpt/btn_play.png) center / 100% 100% no-repeat; box-shadow: none;
+  color: #fff; font-family: 'Jua', sans-serif; font-size: clamp(28px, 4.2dvh, 36px); font-weight: 400; letter-spacing: -.5px; text-shadow: 0 2px 0 rgba(20, 74, 49, .55); transition: transform .08s; cursor: pointer; }
+.home .play-btn.play-img:active { transform: translateY(3px) scale(.99); }
+.home .play-btn.play-img .play-label { line-height: 1; }
+.hact .hact-ico { width: calc(40 * var(--u)); height: calc(40 * var(--u)); object-fit: contain; flex: none; }

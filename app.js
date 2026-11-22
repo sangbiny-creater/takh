@@ -647,11 +647,11 @@ async function viewHome() {
         ${art('homeScene', { cls: 'hero-scene' })}
         ${art('mascotHero', { cls: 'hero-mascot' })}
       </section>
-      <button class="btn-primary play-btn" id="play"><span class="play-tri">${icon('play')}</span>문제 풀기${UI.spark}</button>
+      <button class="play-btn play-img" id="play"><span class="play-label">문제 풀기</span>${UI.spark}</button>
       <p class="play-sub">${CONFIG.series.questionCount}문제 · 문제당 ${CONFIG.scoring.timeLimitMs / 1000}초 · <a href="#" id="rules">점수 규칙</a><span id="left"></span></p>
       <section class="home-actions">
-        <a class="hact ccard" href="#/submit"><i>${UI.quill}</i><span>문제내기</span></a>
-        <a class="hact ccard" href="#/report"><i>${UI.flag}</i><span>문제 정정요청</span></a>
+        <a class="hact ccard" href="#/submit">${art('actSubmit', { cls: 'hact-ico' })}<span>문제내기</span></a>
+        <a class="hact ccard" href="#/report">${art('actReport', { cls: 'hact-ico' })}<span>문제 정정요청</span></a>
       </section>
     </div>`;
   $app.querySelector('#play').onclick = () => { location.hash = '#/play'; };

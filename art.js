@@ -32,6 +32,8 @@ export const ART = {
   tileTrophy: ['tile_trophy.png', svgData(I.trophy)],
   tileChart: ['tile_chart.png', svgData(I.chart)],
   tileStar: ['tile_star.png', svgData(I.star)],
+  actSubmit: ['act_submit.png', svgData('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2A7D52" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/><path d="M4 20h16"/></svg>')],
+  actReport: ['act_report.png', svgData('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2A7D52" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>')],
   crown: ['ui_crown.png', 'crown.png'],
   medal2: ['ui_medal_2.png', svgData(I.medal(2, '#A8B4BD'))],
   medal3: ['ui_medal_3.png', svgData(I.medal(3, '#F29A4A'))],
