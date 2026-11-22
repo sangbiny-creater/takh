@@ -9,6 +9,21 @@ const pct = (v) => (v == null ? '-' : v + '%');
 const dt = (ms) => (ms ? new Date(ms).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-');
 
 let META = null;
+// 화면 안 확인 창 — 브라우저 기본 confirm() 은 일부 환경(앱 안 브라우저 등)에서 뜨지 않고 바로 '취소'가 됨
+function ask(msg) {
+  return new Promise((resolve) => {
+    const d = document.createElement('div');
+    d.className = 'ask-back';
+    d.innerHTML = `<div class="ask-box" role="dialog" aria-modal="true"><p></p><div class="ask-btns"><button class="btn" data-v="0">취소</button><button class="btn primary" data-v="1">확인</button></div></div>`;
+    d.querySelector('p').textContent = msg;
+    const done = (v) => { d.remove(); document.removeEventListener('keydown', key); resolve(v); };
+    const key = (e) => { if (e.key === 'Escape') done(false); if (e.key === 'Enter') done(true); };
+    d.onclick = (e) => { if (e.target === d) done(false); const b = e.target.closest('[data-v]'); if (b) done(b.dataset.v === '1'); };
+    document.addEventListener('keydown', key);
+    document.body.appendChild(d);
+    d.querySelector('[data-v="1"]').focus();
+  });
+}
 function toast(msg, error = false) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'show' + (error ? ' error' : '');
@@ -340,7 +355,7 @@ async function viewQuestion([id], query) {
       } else {
         await api('/questions/' + encodeURIComponent(q.id), { method: 'PUT', body });
         toast('저장했습니다');
-        if (body.correct_option !== origCorrect && q.attempts > 0 && confirm('정답 번호가 바뀌었습니다. 기존 정답률 통계는 의미가 없어졌으니 통계를 초기화할까요?')) {
+        if (body.correct_option !== origCorrect && q.attempts > 0 && await ask('정답 번호가 바뀌었습니다. 기존 정답률 통계는 의미가 없어졌으니 통계를 초기화할까요?')) {
           await api(`/questions/${encodeURIComponent(q.id)}/reset-stats`, { method: 'POST' });
         }
         route();
@@ -355,11 +370,11 @@ async function viewQuestion([id], query) {
       return removeQuestion(q, () => { location.hash = '#/questions'; });
     };
     $main.querySelector('#reset-stats')?.addEventListener('click', async () => {
-      if (!confirm('이 문항의 정답률 통계를 0부터 다시 집계할까요? (플레이 기록은 남습니다)')) return;
+      if (!await ask('이 문항의 정답률 통계를 0부터 다시 집계할까요? (플레이 기록은 남습니다)')) return;
       await api(`/questions/${encodeURIComponent(q.id)}/reset-stats`, { method: 'POST' }); toast('통계를 초기화했습니다'); route();
     });
     $main.querySelectorAll('[data-restore]').forEach((b) => (b.onclick = async () => {
-      if (!confirm('이 버전으로 되돌릴까요?')) return;
+      if (!await ask('이 버전으로 되돌릴까요?')) return;
       await api(`/questions/${encodeURIComponent(q.id)}/restore/${b.dataset.restore}`, { method: 'POST' }); toast('복원했습니다'); route();
     }));
   }
@@ -491,7 +506,7 @@ async function removeQuestion(q, reload) {
   const msg = q.served
     ? `${q.id} 문항을 삭제할까요?\n\n이미 사용자에게 ${q.served}회 나간 문항이라, 지난 기록이 깨지지 않도록 완전히 지우지 않고 '삭제됨'으로 숨깁니다. 앞으로 출제되지 않고, 상태 필터에서 '삭제됨'을 고르면 다시 볼 수 있어요.`
     : `${q.id} 문항을 완전히 삭제할까요? (아직 출제된 적 없음, 되돌릴 수 없음)`;
-  if (!confirm(msg)) return;
+  if (!await ask(msg)) return;
   try {
     const r = await api('/questions/' + encodeURIComponent(q.id), { method: 'DELETE' });
     toast(r.soft ? '삭제됨으로 숨겼습니다 (출제 안 됨)' : '삭제했습니다'); reload();
@@ -589,7 +604,7 @@ async function viewImport() {
   const section = (title, n, head, rows) => !n ? '' : `<details class="imp" ${n <= 20 ? 'open' : ''}><summary>${title} <b>${fmt(n)}</b>개${rows.length < n ? ` (앞 ${rows.length}개만 표시)` : ''}</summary><table class="t"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></details>`;
   async function run(dry) {
     const m = mode();
-    if (!dry && !confirm(m === 'add' ? '중복을 뺀 새 문제를 추가할까요?' : '같은 번호 문제의 내용을 파일대로 바꿀까요?')) return;
+    if (!dry && !await ask(m === 'add' ? '중복을 뺀 새 문제를 추가할까요?' : '같은 번호 문제의 내용을 파일대로 바꿀까요?')) return;
     try {
       $main.querySelector('#result').innerHTML = '<div class="muted">검사 중…</div>';
       const r = await api(`/import?filename=${encodeURIComponent(filename)}&mode=${m}${dry ? '&dryRun=1' : ''}`, { method: 'POST', body: text });
@@ -643,7 +658,7 @@ async function viewStats() {
       ${META.series.slots.map((sl, i) => `<tr><td>${i + 1}</td><td>${esc(sl.eras.join(' / '))}</td><td class="num">${fmt(sl.eras.reduce((a, e) => a + (facts[e]?.questions || 0), 0))}</td><td class="num">${fmt(sl.eras.reduce((a, e) => a + (facts[e]?.facts || 0), 0))}</td></tr>`).join('')}
       </tbody></table><p class="muted" style="font-size:12px;margin:8px 0 0">지식 그룹 수가 적은 시대일수록 같은 내용이 자주 반복됩니다. 문항을 늘릴 때 우선순위로 참고하세요.</p></div>`;
   $main.querySelector('#apply-diff').onclick = async () => {
-    if (!confirm('응시 수가 충분한 문항 중 정답률과 난이도가 맞지 않는 문항의 난이도를 추천값으로 바꿀까요?')) return;
+    if (!await ask('응시 수가 충분한 문항 중 정답률과 난이도가 맞지 않는 문항의 난이도를 추천값으로 바꿀까요?')) return;
     const r = await api('/questions/apply-suggested-difficulty', { method: 'POST' });
     toast(`${r.updated}개 문항 난이도를 조정했습니다`); route();
   };
@@ -701,7 +716,7 @@ async function runDrawer(id, reload) {
   root.querySelector('#close').onclick = close;
   root.querySelector('#dq').onclick = async () => { await api(`/runs/${id}/disqualify`, { method: 'POST', body: { value: !r.disqualified } }); toast('변경했습니다'); close(); reload(); };
   root.querySelector('#block').onclick = async () => {
-    if (!confirm(`${r.nickname} 사용자를 차단할까요? 모든 기록이 랭킹에서 빠지고 플레이할 수 없습니다.`)) return;
+    if (!await ask(`${r.nickname} 사용자를 차단할까요? 모든 기록이 랭킹에서 빠지고 플레이할 수 없습니다.`)) return;
     await api(`/users/${r.user_id}/block`, { method: 'POST', body: { value: true } }); toast('차단했습니다'); close(); reload();
   };
 }
