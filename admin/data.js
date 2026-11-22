@@ -276,7 +276,7 @@ export async function api(path, opts = {}) {
   if (seg[0] === 'reports' && seg[1]) return call('adminReport', { id: seg[1], ...opts.body });
 
   if (p === '/settings' && method === 'GET') {
-    return { only_approved: '0', daily_play_limit: '5', avoid_recent_days: '14', ...((await getDoc(doc(fs, 'settings', 'game'))).data() || {}) };
+    return { only_approved: '0', free_plays: '3', avoid_recent_days: '14', ...((await getDoc(doc(fs, 'settings', 'game'))).data() || {}) };
   }
   if (p === '/settings' && method === 'PUT') return call('adminSetSettings', opts.body);
 

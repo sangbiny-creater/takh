@@ -875,3 +875,6 @@ body.secure #app { user-select: none; -webkit-user-select: none; }
 .rec-card .rec-row { border: 2px solid transparent; border-radius: 14px; transition: border-color .12s, background-color .12s; }
 .rec-card .rec-row.tap { border-color: #F5A04A; background: #FFF3E2; }
 .greet-l1 { gap: 0; } .greet-l1 .greet-av { margin-right: 10px; }
+/* 웹 배너 (AdSense): 문제 화면 맨 위 광고 자리(.ad-bar)에 겹쳐 띄움 — 문제가 바뀌어도 다시 불러오지 않음 */
+#web-banner { position: absolute; top: env(safe-area-inset-top); left: 50%; transform: translateX(-50%); width: 320px; height: 50px; z-index: 15; overflow: hidden; }
+#web-banner[hidden] { display: none; }

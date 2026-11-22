@@ -729,7 +729,7 @@ async function viewSettings() {
         <h2>출제 정책</h2>
         <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:16px"><input type="checkbox" name="only_approved" ${s.only_approved === '1' ? 'checked' : ''} style="margin-top:3px">
           <span><b>검수 완료(APPROVED) 문항만 출제</b><br><span class="muted">상용 서비스에서는 켜는 것을 권장합니다. 켜면 시대별로 검수 완료 문항이 충분한지 먼저 확인하세요.</span></span></label>
-        <label style="display:block;margin-bottom:16px"><b>하루 도전 횟수 제한</b> <span class="muted">(0 = 무제한, KST 자정 초기화)</span><br><input class="in" type="number" min="0" max="999" name="daily_play_limit" value="${esc(s.daily_play_limit)}" style="margin-top:6px;width:120px"></label>
+        <label style="display:block;margin-bottom:16px"><b>하루 무료 도전 횟수</b> <span class="muted">(이 횟수를 넘으면 한 판마다 광고를 봐야 함 · 광고 횟수 제한 없음 · 0 = 광고 없이 무제한 · KST 자정 초기화)</span><br><input class="in" type="number" min="0" max="999" name="free_plays" value="${esc(s.free_plays)}" style="margin-top:6px;width:120px"></label>
         <label style="display:block;margin-bottom:16px"><b>최근 본 문항 회피 기간 (일)</b> <span class="muted">(0 = 사용 안 함)</span><br><input class="in" type="number" min="0" max="365" name="avoid_recent_days" value="${esc(s.avoid_recent_days)}" style="margin-top:6px;width:120px"></label>
         <button class="btn primary">저장</button>
       </form>
@@ -752,7 +752,7 @@ async function viewSettings() {
     e.preventDefault();
     const fd = new FormData(e.target);
     try {
-      await api('/settings', { method: 'PUT', body: { only_approved: fd.get('only_approved') ? '1' : '0', daily_play_limit: fd.get('daily_play_limit') || '0', avoid_recent_days: fd.get('avoid_recent_days') || '0' } });
+      await api('/settings', { method: 'PUT', body: { only_approved: fd.get('only_approved') ? '1' : '0', free_plays: fd.get('free_plays') || '0', avoid_recent_days: fd.get('avoid_recent_days') || '0' } });
       toast('저장했습니다');
     } catch (err) { toast(err.message, true); }
   };

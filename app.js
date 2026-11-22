@@ -82,10 +82,42 @@ const FRIEND = (() => {
   try { return JSON.parse(sessionStorage.getItem('takh_friend') || 'null'); } catch { return null; }
 })();
 
-// ---------- 광고 (웹: 빈 광고 자리 · 앱: AdMob — lib/native.js) ----------
+// ---------- 광고 (웹: AdSense · 앱: AdMob — lib/native.js · 설정은 lib/ads_config.js) ----------
 const Native = window.Native || { on: false };
-function adBarHtml() { return `<div class="ad-bar" aria-label="광고">${Native.on ? '' : '<span>광고 영역</span>'}</div>`; }
-function bannerAd(show) { if (Native.on) Native.banner(show); }
+// ---------- 광고: 앱은 AdMob(native.js), 웹은 AdSense (lib/ads_config.js 의 web) ----------
+const WEB_ADS = (!Native.on && window.ADS_CONFIG?.web) || {};
+const WEB_ADS_ON = !!(WEB_ADS.client && /^ca-pub-\d{10,20}$/.test(WEB_ADS.client));
+let adsLoaded = false;
+function loadWebAds() {
+  if (!WEB_ADS_ON || adsLoaded) return;
+  adsLoaded = true;
+  window.adsbygoogle = window.adsbygoogle || [];
+  window.adBreak = window.adConfig = (o) => window.adsbygoogle.push(o);
+  const sc = document.createElement('script');
+  sc.async = true; sc.crossOrigin = 'anonymous';
+  sc.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${WEB_ADS.client}`;
+  if (WEB_ADS.test) sc.dataset.adbreakTest = 'on';
+  sc.dataset.adFrequencyHint = '30s';
+  document.head.appendChild(sc);
+  window.adConfig({ preloadAdBreaks: 'on', sound: 'on' });
+}
+// 문제 화면 맨 위 배너: 문제가 바뀔 때마다 화면을 새로 그려도 광고는 다시 불러오지 않도록, 화면 밖(#web-banner)에 한 번만 만들어 위에 띄움
+function adBarHtml() { return `<div class="ad-bar" aria-label="광고">${Native.on || (WEB_ADS_ON && WEB_ADS.bannerSlot) ? '' : '<span>광고 영역</span>'}</div>`; }
+function bannerAd(show) {
+  if (Native.on) { Native.banner(show); return; }
+  if (!WEB_ADS_ON || !WEB_ADS.bannerSlot) return;
+  let el = document.getElementById('web-banner');
+  if (show && !el) {
+    loadWebAds();
+    el = document.createElement('div');
+    el.id = 'web-banner';
+    el.innerHTML = `<ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="${WEB_ADS.client}" data-ad-slot="${WEB_ADS.bannerSlot}"${WEB_ADS.test ? ' data-adtest="on"' : ''}></ins>`;
+    document.getElementById('stage').appendChild(el);
+    try { window.adsbygoogle.push({}); } catch { /* 광고 차단 등 */ }
+  }
+  if (el) el.hidden = !show;
+}
+/** 보상형 광고. true = 끝까지 봄, false = 중간에 닫음. 광고를 못 불러오면 그냥 진행(true) */
 async function rewardedAd() {
   if (Native.on) {
     const r = await Native.rewarded();
@@ -93,12 +125,37 @@ async function rewardedAd() {
     if (!r) toast('광고를 끝까지 보면 다시 도전할 수 있어요');
     return !!r;
   }
-  return new Promise((done) => { // 웹: 가짜 광고 3초 (다운힐 러너와 같음)
+  if (WEB_ADS_ON && WEB_ADS.rewarded) {
+    loadWebAds();
+    const r = await new Promise((done) => {
+      let settled = false;
+      const end = (v) => { if (!settled) { settled = true; clearTimeout(t); done(v); } };
+      const t = setTimeout(() => end('none'), 10000); // 10초 안에 광고가 안 뜨면 그냥 진행
+      window.adBreak({
+        type: 'reward', name: 'retry',
+        beforeReward: (showAdFn) => { clearTimeout(t); showAdFn(); },
+        adViewed: () => end(true),
+        adDismissed: () => end(false),
+        adBreakDone: (info) => end(info?.breakStatus === 'viewed' ? true : info?.breakStatus === 'dismissed' ? false : 'none'),
+      });
+    });
+    if (r === 'none') { toast('지금은 광고를 불러오지 못해서 그냥 진행할게요', 3000); return true; }
+    if (!r) toast('광고를 끝까지 보면 다시 도전할 수 있어요');
+    return r;
+  }
+  return new Promise((done) => { // 광고 설정 전: 가짜 광고 3초
     modal(`<div class="ad-fake"><div class="ad-fake-box">광고</div><p>광고가 끝나면 다시 도전이 시작돼요</p><b id="ad-n">3</b></div>`, (m, close, back) => {
       back.dataset.locked = '1'; let n = 3;
       const t = setInterval(() => { n--; const el = m.querySelector('#ad-n'); if (el) el.textContent = n; if (n <= 0) { clearInterval(t); close(); done(true); } }, 1000);
     });
   });
+}
+/** 광고 보고 한 판 더: 광고 → 서버에 한 판 받기 → 시작 */
+async function adThenStart(btn) {
+  if (btn) btn.disabled = true;
+  if (!(await rewardedAd())) { if (btn) btn.disabled = false; return; }
+  try { await api('adRetry'); CONFIG.needAd = false; startNewRun(null); }
+  catch (e) { toast(e.message, 3000); if (btn) btn.disabled = false; }
 }
 
 // ---------- 자랑하기: 공유 창(카카오톡·문자 등) → 안 되면 문자·링크 복사 (다운힐 러너와 같음) ----------
@@ -137,6 +194,7 @@ const UI = {
   google: '<svg viewBox="0 0 24 24"><path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4"/><path d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" fill="#34A853"/><path d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14z" fill="#FBBC05"/><path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z" fill="#EA4335"/></svg>',
   mail: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6l8.5 7 8.5-7"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="#1F3A2B" stroke-width="2.4" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>',
+  retry: '<svg viewBox="0 0 24 24" fill="none" stroke="#2E9A5E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>',
   video: '<svg viewBox="0 0 28 24"><rect x="1.5" y="3" width="25" height="18" rx="3" fill="#2E9A5E" stroke="#1E6B47" stroke-width="2"/><path d="M11.5 8v8l6-4z" fill="#fff"/><path d="M5 3v18M23 3v18" stroke="#1E6B47" stroke-width="2"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="#C94A3A" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5" fill="#FFF3E6"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4" stroke-linecap="round"/></svg>',
   clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="#1F2A24" stroke-width="2" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2.5" fill="#F3FAF2"/><rect x="9" y="2" width="6" height="4" rx="1.5" fill="#fff"/><path d="M8.5 11h7M8.5 15h7" stroke-linecap="round"/></svg>',
@@ -268,7 +326,7 @@ function viewSignup() {
     try { await afterLogin(await signupEmail(em, pw), '가입했어요! 확인 메일을 보냈어요'); } catch (e) { $('err').textContent = authErrorText(e); $('go').disabled = false; }
   };
 }
-const COLLECT = '· 모으는 것: 로그인 계정 정보(이메일, 계정 식별자), 닉네임, 플레이 기록(점수·정답 여부·풀이 시간), 앱에서는 광고 식별자\n· 쓰는 곳: 회원 확인, 주간 랭킹, 오답 노트, 부정 이용 방지, 광고\n· 보관 기간: 계정을 삭제할 때까지 (법령에 따라 보관해야 하는 경우 그 기간)\n· 동의하지 않을 수 있지만, 동의하지 않으면 게임을 이용할 수 없어요.';
+const COLLECT = '· 모으는 것: 로그인 계정 정보(이메일, 계정 식별자), 닉네임, 아바타, 플레이 기록(점수·정답 여부·풀이 시간), 문제내기·정정요청 때 적은 이메일과 내용, 광고 쿠키(웹)·광고 식별자(앱)\n· 쓰는 곳: 회원 확인, 주간 랭킹, 오답 노트, 부정 이용 방지, 낸 문제 채택 안내, 광고\n· 보관 기간: 계정을 삭제할 때까지 (법령에 따라 보관해야 하는 경우 그 기간)\n· 동의하지 않을 수 있지만, 동의하지 않으면 게임을 이용할 수 없어요.';
 function viewTerms() {
   if (!store.user) { location.hash = '#/login'; return; }
   $app.innerHTML = `
@@ -603,7 +661,7 @@ async function viewHome() {
     const b = $app.querySelector('#week-badge span'); if (!b) return;
     b.innerHTML = r.me ? `이번 주 <b>${fmt(r.me.rank)}위</b> · <b>${fmt(r.me.score)}점</b>` : `이번 주 참가자 <b>${fmt(r.participants)}명</b>`;
   }).catch(() => {});
-  if (CONFIG.playsLeftToday != null) $app.querySelector('#left').textContent = ` · 오늘 남은 도전 ${CONFIG.playsLeftToday}회`;
+  if (CONFIG.freePlays) $app.querySelector('#left').textContent = CONFIG.needAd ? ' · 광고 보고 계속 도전' : ` · 오늘 무료 ${CONFIG.freeLeft ?? CONFIG.freePlays}회`;
 }
 
 // ---------- 문제 화면 (맨 위 광고 · 문제 카드 · 보기 4개 · 하단 버튼) ----------
@@ -707,7 +765,7 @@ function finishHtml(runId, score, correct) {
       ${FRIEND ? `<div class="friend-note">${beat ? `${esc(FRIEND.by || '친구')}님의 ${fmt(FRIEND.from)}점을 넘었어요!` : `${esc(FRIEND.by || '친구')}님 기록 ${fmt(FRIEND.from)}점까지 ${fmt(FRIEND.from - score)}점 남았어요`}</div>` : ''}
       <button class="btn-share" id="share"><i>${UI.share}</i>자랑하기</button>
       <div class="actions-row">
-        <button class="btn-card" id="adretry"><i>${UI.video}</i><span>광고 보고 다시 도전<small id="ad-left"></small></span></button>
+        <button class="btn-card" id="retry"></button>
         <a class="btn-card" href="#/ranking">${art('iconTrophy', { cls: 'bc-ico' })}<span>주간 랭킹</span></a>
       </div>
       <a class="btn-link" href="#/results/${runId}">풀이 상세 보기</a>
@@ -722,7 +780,9 @@ async function viewPlay() {
     try { const c = await api('currentQuestion', { runId }); if (!c.done) return playLoop(runId, c); } catch { /* 새로 시작 */ }
   }
   $app.innerHTML = readyHtml();
-  $app.querySelector('#go').onclick = (e) => startNewRun(e.currentTarget);
+  const go = $app.querySelector('#go');
+  if (CONFIG.needAd) go.innerHTML = `<span class="play-tri">${icon('play')}</span>광고 보고 시작!${UI.spark}`;
+  go.onclick = (e) => (CONFIG.needAd ? adThenStart(e.currentTarget) : startNewRun(e.currentTarget));
 }
 async function startNewRun(btn) {
   if (btn) btn.disabled = true;
@@ -734,11 +794,13 @@ async function startNewRun(btn) {
     }
     const r = await startP;
     CONFIG.me.currentRunId = r.runId;
+    CONFIG.playsToday = (CONFIG.playsToday || 0) + 1;
+    CONFIG.needAd = !!CONFIG.freePlays && CONFIG.playsToday >= CONFIG.freePlays;
     const c = await api('currentQuestion', { runId: r.runId });
     playLoop(r.runId, c);
   } catch (err) {
     toast(err.message, 3200);
-    if (err.code === 'functions/resource-exhausted') { location.hash = '#/'; route(); return; }
+    if (err.code === 'functions/resource-exhausted') { CONFIG.needAd = true; location.hash = '#/play'; route(); return; }
     if (btn) btn.disabled = false; else { location.hash = '#/'; route(); }
   }
 }
@@ -835,19 +897,16 @@ function finish(runId, tally) {
   setTabbar(true); $tabbar.querySelectorAll('a').forEach((a) => a.classList.remove('on'));
   const score = tally.score, correct = tally.correct;
   $app.innerHTML = finishHtml(runId, score, correct);
-  const adBtn = $app.querySelector('#adretry');
-  const paintAd = () => { const left = CONFIG.adRetryLeft ?? 1; $app.querySelector('#ad-left').textContent = left ? '오늘 1회' : '오늘 사용함'; adBtn.disabled = !left; };
-  paintAd();
+  // 오늘 무료 도전(기본 3번)을 다 쓰면 '광고 보고 다시 도전', 그 전엔 그냥 '다시 도전' (광고 횟수 제한 없음)
+  const retry = $app.querySelector('#retry');
+  const paintRetry = () => { retry.innerHTML = CONFIG.needAd ? `<i>${UI.video}</i><span>광고 보고 다시 도전</span>` : `<i>${UI.retry}</i><span>다시 도전</span>`; };
+  paintRetry();
   $app.querySelector('#share').onclick = () => share(score, correct);
-  adBtn.onclick = async () => {
-    adBtn.disabled = true;
-    if (!(await rewardedAd())) { adBtn.disabled = false; return; }
-    try { await api('adRetry'); CONFIG.adRetryLeft = 0; startNewRun(null); } catch (e) { toast(e.message, 3000); CONFIG.adRetryLeft = 0; paintAd(); }
-  };
+  retry.onclick = () => (CONFIG.needAd ? adThenStart(retry) : startNewRun(retry));
   Promise.all([api('ranking', { which: 'this' }), loadConfig(true)]).then(([rk]) => {
     const el = $app.querySelector('#rank-note'); if (!el) return;
     el.querySelector('span').textContent = rk?.me ? `이번 주 내 순위 ${fmt(rk.me.rank)}위 · 최고 ${fmt(rk.me.score)}점` : '이번 주 기록에 올라갔어요';
-    if ($app.querySelector('#ad-left')) paintAd();
+    if ($app.querySelector('#retry')) paintRetry();
   }).catch(() => { const el = $app.querySelector('#rank-note'); if (el) el.hidden = true; });
 }
 
