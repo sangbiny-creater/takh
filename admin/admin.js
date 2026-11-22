@@ -89,7 +89,7 @@ async function boot() {
   route();
 }
 
-const ROUTES = { submissions: viewSubmissions, reports: viewReports, dashboard: viewDashboard, questions: viewQuestions, q: viewQuestion, import: viewImport, stats: viewStats, runs: viewRuns, ranking: viewRanking, settings: viewSettings };
+const ROUTES = { playstats: viewPlayStats, submissions: viewSubmissions, reports: viewReports, dashboard: viewDashboard, questions: viewQuestions, q: viewQuestion, import: viewImport, stats: viewStats, runs: viewRuns, ranking: viewRanking, settings: viewSettings };
 async function route() {
   if (!META) return;
   const { parts, query } = parseHash();
@@ -662,6 +662,35 @@ async function viewStats() {
     const r = await api('/questions/apply-suggested-difficulty', { method: 'POST' });
     toast(`${r.updated}개 문항 난이도를 조정했습니다`); route();
   };
+}
+
+// ---------- 플레이 통계 (하루 최대 판 수 · 총 판 수 · 사람별 문제 소진) ----------
+async function viewPlayStats() {
+  $main.innerHTML = '<h1 class="page">플레이 통계</h1><div class="muted">불러오는 중…</div>';
+  const d = await api('/playstats');
+  const dt = (ms) => (ms ? new Date(ms).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-');
+  const pct = (n) => (d.poolGeneral ? Math.round((n / d.poolGeneral) * 100) : 0);
+  const repeatAt = d.poolGeneral ? Math.floor(d.poolGeneral / d.perRun) : 0;
+  const near = d.userRows.filter((u) => pct(u.seen) >= 80).length;
+  $main.innerHTML = `
+    <h1 class="page">플레이 통계</h1>
+    <p class="page-sub">판 = '문제 풀기'로 시작한 한 판 (끝까지 푼 판 + 중간에 나간 판). 날짜는 한국 시간 기준. 문제가 더 필요한지 판단할 때 보세요.</p>
+    <div class="grid g4">
+      <div class="card kpi"><small>지금까지 총 판 수</small><b>${fmt(d.started)}</b><span class="muted">끝까지 ${fmt(d.finished)} · 중간에 나감 ${fmt(d.abandoned)}</span></div>
+      <div class="card kpi"><small>플레이한 사람</small><b>${fmt(d.players)}</b><span class="muted">명</span></div>
+      <div class="card kpi"><small>한 사람이 하루에 한 최대 판 수</small><b>${fmt(d.maxPerDay)}</b><span class="muted">판</span></div>
+      <div class="card kpi"><small>출제 중인 일반 문제</small><b>${fmt(d.poolGeneral)}</b><span class="muted">약 ${fmt(repeatAt)}판부터 다시 본 문제가 나옴</span></div>
+    </div>
+    ${near ? `<div class="alert orange" style="margin-top:14px">출제 문제의 80% 이상을 이미 본 사람이 <b>${near}명</b> 있어요. 이 사람들은 곧 본 문제를 다시 보게 돼요 → 문제를 더 넣을 때예요.</div>` : ''}
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card"><h2>날짜별</h2>
+        <div class="table-wrap"><table class="t"><thead><tr><th>날짜</th><th class="num">판 수</th><th class="num">끝까지</th><th class="num">사람</th><th class="num">1인 최대</th><th>최대 플레이어</th></tr></thead>
+        <tbody>${d.dayRows.map((r) => `<tr><td>${esc(r.day)}</td><td class="num">${fmt(r.runs)}</td><td class="num">${fmt(r.finished)}</td><td class="num">${fmt(r.players)}</td><td class="num"><b>${fmt(r.maxPerUser)}</b></td><td>${esc(r.maxUser)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">아직 기록이 없어요</td></tr>'}</tbody></table></div></div>
+      <div class="card"><h2>사람별</h2>
+        <div class="table-wrap"><table class="t"><thead><tr><th>닉네임</th><th class="num">총 판 수</th><th class="num">하루 최대</th><th class="num">플레이한 날</th><th class="num">본 문제</th><th>마지막</th></tr></thead>
+        <tbody>${d.userRows.map((u) => `<tr><td>${esc(u.nickname)}</td><td class="num"><b>${fmt(u.runs)}</b></td><td class="num">${fmt(u.maxPerDay)}${u.maxDay ? ` <span class="muted" style="font-size:12px">(${esc(u.maxDay.slice(5))})</span>` : ''}</td><td class="num">${fmt(u.days)}</td><td class="num">${fmt(u.seen)} <span class="muted" style="font-size:12px">(${pct(u.seen)}%)</span></td><td>${dt(u.last)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">아직 기록이 없어요</td></tr>'}</tbody></table></div>
+        <p class="muted" style="font-size:12px;margin:8px 0 0">본 문제 = 지금 출제 중인 일반 문제 중 그 사람이 한 번이라도 본 문제 수 (%는 전체 대비).</p></div>
+    </div>`;
 }
 
 // ---------- 플레이 기록 ----------

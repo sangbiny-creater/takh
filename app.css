@@ -894,3 +894,24 @@ body.secure #app { user-select: none; -webkit-user-select: none; }
 .finish .btn-card i { display: grid; place-items: center; width: 30px; height: 30px; flex: none; }
 .finish .btn-card i svg { width: 30px; height: 30px; }
 .finish .btn-card .bc-ico { width: 30px; height: 30px; }
+
+/* ===== 앱 인트로 (Native.on 일 때만, 1.6초) ===== */
+#intro { position: fixed; inset: 0; z-index: 100; overflow: hidden; background: linear-gradient(180deg, #2A8A5E 0%, #1F7A52 34%, #DCEFE3 34.2%, #EAF6EE 70%, #CFE9D3 100%); transition: opacity .4s ease; }
+#intro.out { opacity: 0; pointer-events: none; }
+.intro-sky { position: absolute; left: 0; right: 0; top: 34%; height: 18%; background: radial-gradient(40px 20px at 18% 40%, #fff 96%, transparent 100%), radial-gradient(54px 26px at 26% 34%, #fff 96%, transparent 100%), radial-gradient(44px 22px at 80% 60%, #fff 96%, transparent 100%), radial-gradient(58px 28px at 88% 54%, #fff 96%, transparent 100%); opacity: .9; }
+.intro-title { position: absolute; left: 0; right: 0; top: calc(9% + env(safe-area-inset-top)); text-align: center; color: #fff; animation: introIn .6s ease both; }
+.intro-logo { width: 64px; height: 64px; object-fit: contain; filter: drop-shadow(0 3px 0 rgba(0,0,0,.18)); }
+.intro-title h1 { margin: 6px 0 0; font-family: 'Jua', sans-serif; font-weight: 400; font-size: clamp(44px, 13vw, 60px); line-height: 1.05; letter-spacing: -1px; text-shadow: 0 3px 0 #134A31; }
+.intro-title h1 small { display: block; font-size: .62em; color: #FFE14D; }
+.intro-title p { margin: 10px auto 0; display: inline-block; padding: 5px 16px; border-radius: 999px; background: rgba(255,255,255,.18); font-weight: 800; font-size: 15px; }
+.intro-palace { position: absolute; left: -6%; bottom: 13%; width: 62%; object-fit: contain; animation: introUp .7s .1s ease both; }
+.intro-king { position: absolute; right: -6%; bottom: 0; width: 74%; max-height: 52%; object-fit: contain; object-position: right bottom; animation: introUp .7s .2s ease both; }
+.intro-foot { position: absolute; left: 0; right: 0; bottom: calc(14px + env(safe-area-inset-bottom)); text-align: center; font-size: 12px; font-weight: 800; letter-spacing: 3px; color: rgba(31, 90, 58, .55); }
+@keyframes introIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+@keyframes introUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+#intro { background: linear-gradient(180deg, #2A8A5E 0%, #1F7A52 30%, #6FB98E 44%, #DCEFE3 56%, #EAF6EE 78%, #CFE9D3 100%); }
+.intro-sky { top: 46%; }
+.intro-logo { display: block; margin: 0 auto; width: 92px; height: 92px; border-radius: 22px; box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+.intro-palace { width: 58%; bottom: 16%; left: -4%; }
+.intro-king { width: 88%; max-height: 60%; right: -10%; }
+.intro-foot { z-index: 3; color: rgba(255,255,255,.9); text-shadow: 0 1px 3px rgba(0,0,0,.4); }

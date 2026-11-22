@@ -161,7 +161,8 @@ async function adThenStart(btn) {
 // ---------- 자랑하기: 공유 창(카카오톡·문자 등) → 안 되면 문자·링크 복사 (다운힐 러너와 같음) ----------
 function shareData(score, correct) {
   const nick = store.nick || '';
-  const url = `${location.origin}${location.pathname}?from=${score}${nick ? '&by=' + encodeURIComponent(nick) : ''}`;
+  const base = Native.on ? 'https://takh.brown-crab.com/' : `${location.origin}${location.pathname}`; // 앱 안 주소(localhost)는 친구가 열 수 없음
+  const url = `${base}?from=${score}${nick ? '&by=' + encodeURIComponent(nick) : ''}`;
   const text = `[타임어택 한국사] ${nick ? nick + '님이 ' : ''}한국사 10문제를 ${fmt(score)}점${correct != null ? `(정답 ${correct}/10)` : ''}으로 풀었어요! 나를 이겨 볼래?`;
   return { title: '타임어택 한국사', text, url };
 }
@@ -711,8 +712,8 @@ function layoutQuestion() {
     const hw = Math.max(0, m.right - a.left + 6), hh = Math.max(0, m.bottom - a.top + 2);
     main.insertAdjacentHTML('afterbegin', `<span class="art-push" style="height:${Math.max(0, m.height - hh)}px"></span><span class="art-hole" style="width:${hw}px;height:${hh}px"></span>`);
   }
-  fitText(main, '.q-text', max, 13);
-  // 가장 작은 글씨로도 넘치면 그림을 빼고 다시 맞춤 (스크롤은 절대 없음)
+  fitText(main, '.q-text', max, 16);
+  // 그림을 둔 채로는 16px 로도 넘치면 그림을 빼고 글자만 다시 맞춤 (스크롤은 절대 없음)
   if (artEl && main.scrollHeight > main.clientHeight + 1) {
     artEl.hidden = true;
     main.querySelectorAll('.art-push,.art-hole').forEach((e) => e.remove());
@@ -808,8 +809,11 @@ async function startNewRun(btn) {
 function playLoop(runId, cur) {
   let timer = null, answered = false, lastHandledSeq = 0;
   const tally = { correct: 0, score: cur.scoreSoFar || 0 };
-  cleanup = () => { cancelAnimationFrame(timer); secure(false); bannerAd(false); window.removeEventListener('resize', layoutQuestion); };
+  // 한글 글꼴(Noto Sans KR)은 글자가 처음 쓰일 때 늦게 내려받아져 글자 폭이 바뀜 → 글꼴이 들어오면 다시 맞춤 (안 하면 문제 칸이 넘침)
+  const relayout = () => layoutQuestion();
+  cleanup = () => { cancelAnimationFrame(timer); secure(false); bannerAd(false); window.removeEventListener('resize', layoutQuestion); document.fonts?.removeEventListener?.('loadingdone', relayout); };
   window.addEventListener('resize', layoutQuestion);
+  document.fonts?.addEventListener?.('loadingdone', relayout);
   bannerAd(true);
 
   const leave = () => {
@@ -834,6 +838,7 @@ function playLoop(runId, cur) {
       footHtml: `<div class="pot-pill"><span>획득 가능 점수</span><b id="pot">${fmt(CONFIG.scoring.maxPoints)}</b><em>누적 ${fmt(c.scoreSoFar || 0)}점</em></div>`,
     });
     layoutQuestion();
+    document.fonts?.ready?.then(relayout); setTimeout(relayout, 500);
     secure(true);
     $app.querySelector('#leave').onclick = leave;
     const $timer = $app.querySelector('#timer'), $tsec = $timer.querySelector('span'), $pot = $app.querySelector('#pot'), $tbar = $app.querySelector('#tbar');
@@ -1044,8 +1049,45 @@ async function viewWrong() {
   };
   render();
 }
+// ---------- 앱: 뒤로 가기 버튼 ----------
+//  창이 떠 있으면 닫기 · 문제를 푸는 중이면 그만할지 묻기 · 하위 화면이면 위 화면으로 · 홈·로그인이면 앱을 내림
+const BACK_TO = { results: '#/results', profile: '#/settings', account: '#/settings', doc: '#/settings', email: '#/login', signup: '#/login' };
+Native.onBack?.(() => {
+  const back = document.querySelector('#modal-root .modal-back');
+  if (back) { if (!back.dataset.locked) document.getElementById('modal-root').innerHTML = ''; return true; }
+  const [, name = '', arg] = location.hash.replace(/^#\/?/, '#').split(/[#/]/);
+  if (name === 'play' && $app.querySelector('.screen.quiz')) {
+    modal(`<h3>그만할까요?</h3><p>나가도 시간은 계속 흘러요. 다시 들어오면 이어서 풀 수 있어요.</p><div class="row"><button class="btn-ghost" id="c">계속 풀기</button><button class="btn-primary" id="ok" style="height:48px;font-size:16px">나가기</button></div>`, (m, close) => {
+      m.querySelector('#c').onclick = close;
+      m.querySelector('#ok').onclick = () => { close(); location.hash = '#/'; };
+    });
+    return true;
+  }
+  if (name === '' || name === 'login' || name === 'terms' || name === 'nickname') return false;
+  if (name === 'results' && !arg) { location.hash = '#/'; return true; }
+  location.hash = BACK_TO[name] || '#/';
+  return true;
+});
+
+// ---------- 앱: 인트로 (앱을 켤 때 한 번, 서버를 깨우는 동안) ----------
+function showIntro() {
+  const el = document.createElement('div');
+  el.id = 'intro';
+  el.innerHTML = `<div class="intro-sky"></div>
+    <div class="intro-title"><img class="intro-logo" src="assets/gpt/app_icon_256.png" alt="" draggable="false"><h1>타임어택<small>한국사</small></h1><p>10문제 · 문제당 20초</p></div>
+    ${art('homeScene', { cls: 'intro-palace' })}${art('mascotHero', { cls: 'intro-king' })}
+    <div class="intro-foot">BROWN CRAB</div>`;
+  document.body.appendChild(el);
+  return () => { el.classList.add('out'); setTimeout(() => el.remove(), 450); };
+}
+
 // ---------- 시작 ----------
 (async () => {
+  const hideIntro = Native.on ? showIntro() : null;
+  const minShow = new Promise((r) => setTimeout(r, Native.on ? 2000 : 0));
   store.user = (await redirectResult()) || (await currentUser());
+  if (store.user) loadConfig().catch(() => {}); // 인트로가 보이는 동안 서버를 미리 깨움
+  await minShow;
   route();
+  hideIntro?.();
 })();

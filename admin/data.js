@@ -230,6 +230,43 @@ export async function api(path, opts = {}) {
     };
   }
 
+  if (p === '/playstats') {
+    // 플레이 통계: 판(runs) 전체 + 사용자(users)의 본 문제 기록 + 출제 풀(meta/pool) — 문제를 더 만들어야 할지 판단용
+    const [runSnap, userSnap, poolSnap] = await Promise.all([getDocs(collection(fs, 'runs')), getDocs(collection(fs, 'users')), getDoc(doc(fs, 'meta', 'pool'))]);
+    const kday = (ms) => new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
+    const pool = (poolSnap.data()?.items || []).filter((q) => q.a && !q.o);
+    const poolIds = new Set(pool.map((q) => q.i));
+    const days = {}, users = {};
+    let started = 0, finished = 0, abandoned = 0;
+    for (const d of runSnap.docs) {
+      const r = d.data();
+      if (!r.startedAt || !r.uid) continue;
+      started++; if (r.status === 'FINISHED') finished++; if (r.status === 'ABANDONED') abandoned++;
+      const day = kday(r.startedAt);
+      const D = (days[day] ||= { day, runs: 0, finished: 0, per: {} });
+      D.runs++; if (r.status === 'FINISHED') D.finished++;
+      D.per[r.uid] = (D.per[r.uid] || 0) + 1;
+      const U = (users[r.uid] ||= { uid: r.uid, nickname: r.nickname || '', runs: 0, finished: 0, perDay: {}, last: 0 });
+      U.runs++; if (r.status === 'FINISHED') U.finished++;
+      U.perDay[day] = (U.perDay[day] || 0) + 1; U.last = Math.max(U.last, r.startedAt);
+      if (r.nickname) U.nickname = r.nickname;
+    }
+    const nick = {};
+    for (const d of userSnap.docs) {
+      const u = d.data(); nick[d.id] = u.nickname || '';
+      if (users[d.id]) users[d.id].seen = new Set((u.recent || []).map((x) => x.i).filter((i) => poolIds.has(i))).size;
+    }
+    const dayRows = Object.values(days).sort((a, b) => b.day.localeCompare(a.day)).map((D) => {
+      const top = Object.entries(D.per).sort((a, b) => b[1] - a[1])[0] || ['', 0];
+      return { day: D.day, runs: D.runs, finished: D.finished, players: Object.keys(D.per).length, maxPerUser: top[1], maxUser: users[top[0]]?.nickname || nick[top[0]] || '' };
+    });
+    const userRows = Object.values(users).map((U) => {
+      const top = Object.entries(U.perDay).sort((a, b) => b[1] - a[1])[0] || ['', 0];
+      return { nickname: U.nickname || nick[U.uid] || '(닉네임 없음)', runs: U.runs, finished: U.finished, days: Object.keys(U.perDay).length, maxPerDay: top[1], maxDay: top[0], last: U.last, seen: U.seen || 0 };
+    }).sort((a, b) => b.runs - a.runs);
+    return { started, finished, abandoned, players: userRows.length, poolGeneral: pool.length, perRun: 10, dayRows, userRows,
+      maxPerDay: dayRows.reduce((m, d) => Math.max(m, d.maxPerUser), 0) };
+  }
   if (p === '/runs') {
     const cons = [where('status', '==', 'FINISHED')];
     if (qs.flagged === '1') cons.push(where('flagged', '==', true));

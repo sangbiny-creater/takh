@@ -10,7 +10,9 @@ import {
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
 import { FIREBASE_CONFIG, KAKAO_PROVIDER_ID } from './firebase-config.js';
 
-export const EMULATOR = ['localhost', '127.0.0.1'].includes(location.hostname);
+// 앱(Capacitor) 안에서도 주소가 localhost 라서, 앱이면 에뮬레이터가 아님 → 진짜 서버
+const IN_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+export const EMULATOR = !IN_APP && ['localhost', '127.0.0.1'].includes(location.hostname);
 // 백오피스(/admin/)는 이름이 다른 앱으로 띄워 로그인 상태를 따로 보관 → 같은 브라우저에서 플레이어 계정이 덮이지 않음
 const IS_ADMIN_PAGE = /\/admin(\/|$)/.test(location.pathname);
 export const app = initializeApp(EMULATOR ? { apiKey: 'demo-key', projectId: 'demo-takh', authDomain: 'localhost' } : FIREBASE_CONFIG, IS_ADMIN_PAGE ? 'admin' : undefined);
@@ -80,8 +82,21 @@ export async function redirectResult() {
     return (await getRedirectResult(auth))?.user || null;
   } catch { return null; }
 }
+const NATIVE = () => !!(window.Native && window.Native.on);
+/** 앱 안 구글 로그인: 휴대폰의 구글 계정 고르기 → 받은 토큰으로 Firebase 로그인 (웹 팝업은 앱 안에서 막힘 — lib/native.js) */
+async function nativeGoogle() {
+  const cred = GoogleAuthProvider.credential(await window.Native.googleIdToken());
+  const cur = auth.currentUser;
+  if (cur && cur.isAnonymous) {
+    try { return (await linkWithCredential(cur, cred)).user; } catch (e) {
+      if (e.code !== 'auth/credential-already-in-use') throw e; // 이미 있는 계정이면 그 계정으로
+    }
+  }
+  return (await signInWithCredential(auth, cred)).user;
+}
 export async function loginGoogle() {
   if (EMULATOR) return emulatorLogin('google.com');
+  if (NATIVE()) return nativeGoogle();
   const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
   return popupLogin(p);
 }
@@ -100,14 +115,17 @@ export async function signupEmail(email, pw) {
   return u;
 }
 export const resetPassword = (email) => sendPasswordResetEmail(auth, email);
-export const logout = () => signOut(auth);
+export const logout = async () => { if (NATIVE()) await window.Native.googleSignOut(); return signOut(auth); };
 export async function deleteMe(password) {
   const u = auth.currentUser; if (!u) return;
   try { await deleteUser(u); } catch (e) {
     if (e.code !== 'auth/requires-recent-login') throw e;
     const kind = providerOf(u);
     if (kind === 'email') await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, password || prompt('비밀번호를 한 번 더 넣어 주세요') || ''));
-    else if (kind === 'google') await reauthenticateWithPopup(u, new GoogleAuthProvider());
+    else if (kind === 'google') {
+      if (NATIVE()) await reauthenticateWithCredential(u, GoogleAuthProvider.credential(await window.Native.googleIdToken()));
+      else await reauthenticateWithPopup(u, new GoogleAuthProvider());
+    }
     else if (kind === 'kakao') await reauthenticateWithPopup(u, new OAuthProvider(KAKAO_PROVIDER_ID));
     await deleteUser(u);
   }
@@ -121,9 +139,10 @@ export const authErrorText = (e) => ({
   'auth/operation-not-allowed': '이 로그인 방법이 아직 켜져 있지 않아요',
   'auth/user-not-found': '가입되지 않은 이메일이에요',
   'auth/popup-closed-by-user': '',
+  'no-token': '구글 로그인을 하지 못했어요. 다시 해 주세요',
   'auth/cancelled-popup-request': '',
   'kakao/off': '카카오 로그인은 준비 중이에요',
-})[e && e.code] ?? (e && /auth\/(invalid-credential|wrong-password|invalid-login-credentials)/.test(e.code) ? '이메일 또는 비밀번호가 맞지 않아요' : `로그인하지 못했어요 (${(e && (e.code || e.message)) || ''})`);
+})[e && e.code] ?? (e && /cancel/i.test(String(e.message || e)) ? '' : null) ?? (e && /auth\/(invalid-credential|wrong-password|invalid-login-credentials)/.test(e.code) ? '이메일 또는 비밀번호가 맞지 않아요' : `로그인하지 못했어요 (${(e && (e.code || e.message)) || ''})`);
 
 // 에뮬레이터: 진짜 구글 대신 테스트 계정
 async function emulatorLogin(providerId) {

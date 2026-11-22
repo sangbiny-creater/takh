@@ -223,3 +223,9 @@ details.imp summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
 .ask-box { background: #fff; border-radius: 14px; padding: 20px; max-width: 420px; width: 100%; box-shadow: 0 12px 40px rgba(0, 0, 0, .25); }
 .ask-box p { margin: 0 0 16px; white-space: pre-line; line-height: 1.6; }
 .ask-btns { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* 플레이 통계 숫자 카드 */
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi small { color: var(--ink-3); font-size: 13px; }
+.kpi b { font-size: 30px; line-height: 1.1; }
+.kpi .muted { font-size: 12px; }
