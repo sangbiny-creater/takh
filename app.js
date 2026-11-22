@@ -194,8 +194,8 @@ const UI = {
   google: '<svg viewBox="0 0 24 24"><path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4"/><path d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" fill="#34A853"/><path d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14z" fill="#FBBC05"/><path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z" fill="#EA4335"/></svg>',
   mail: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6l8.5 7 8.5-7"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="#1F3A2B" stroke-width="2.4" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>',
-  retry: '<svg viewBox="0 0 24 24" fill="none" stroke="#2E9A5E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>',
-  video: '<svg viewBox="0 0 28 24"><rect x="1.5" y="3" width="25" height="18" rx="3" fill="#2E9A5E" stroke="#1E6B47" stroke-width="2"/><path d="M11.5 8v8l6-4z" fill="#fff"/><path d="M5 3v18M23 3v18" stroke="#1E6B47" stroke-width="2"/></svg>',
+  retry: '<svg viewBox="2.6 2.6 18.8 18.8" fill="none" stroke="#2E9A5E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>',
+  video: '<svg viewBox="0 2 28 20"><rect x="1.5" y="3" width="25" height="18" rx="3" fill="#2E9A5E" stroke="#1E6B47" stroke-width="2"/><path d="M11.5 8v8l6-4z" fill="#fff"/><path d="M5 3v18M23 3v18" stroke="#1E6B47" stroke-width="2"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="#C94A3A" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5" fill="#FFF3E6"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4" stroke-linecap="round"/></svg>',
   clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="#1F2A24" stroke-width="2" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2.5" fill="#F3FAF2"/><rect x="9" y="2" width="6" height="4" rx="1.5" fill="#fff"/><path d="M8.5 11h7M8.5 15h7" stroke-linecap="round"/></svg>',
   stopwatch: '<svg viewBox="0 0 48 48"><rect x="20" y="3" width="8" height="5" rx="1.5" fill="#E8A417" stroke="#4A3426" stroke-width="2"/><circle cx="24" cy="27" r="17" fill="#FFD54A" stroke="#4A3426" stroke-width="3"/><circle cx="24" cy="27" r="12" fill="#FFF8E6"/><path d="M24 19v8l6 3" stroke="#D84A3A" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
@@ -766,7 +766,7 @@ function finishHtml(runId, score, correct) {
       <button class="btn-share" id="share"><i>${UI.share}</i>자랑하기</button>
       <div class="actions-row">
         <button class="btn-card" id="retry"></button>
-        <a class="btn-card" href="#/ranking">${art('iconTrophy', { cls: 'bc-ico' })}<span>주간 랭킹</span></a>
+        <a class="btn-card" href="#/ranking">${art('tileTrophy', { cls: 'bc-ico' })}<span>주간 랭킹</span></a>
       </div>
       <a class="btn-link" href="#/results/${runId}">풀이 상세 보기</a>
     </div>`;
